@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.17
+ * Version 1.18
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -67,6 +67,19 @@ class application
 		
 		# Return the result
 		return $html;
+	}
+	
+	
+	# Function to send an HTTP header such as a 404; note that output buffering must have been switched on at server level
+	function sendHeader ($type)
+	{
+		# Select the appropriate header
+		switch ($type) {
+			
+			case '404':
+				header ('HTTP/1.0 404 Not Found');
+				break;
+		}
 	}
 	
 	
@@ -194,6 +207,29 @@ class application
 		
 		# Otherwise return an empty string
 		return '';
+	}
+	
+	
+	# Function to clean up text
+	function cleanText ($record)
+	{
+		# Define conversions
+		$convertFrom = "\x82\x83\x84\x85\x86\x87\x89\x8a\x8b\x8c\x8e\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f";
+		$convertTo = "'f\".**^\xa6<\xbc\xb4''\"\"---~ \xa8>\xbd\xb8\xbe";
+		
+		# If not an array, clean the item
+		if (!is_array ($record)) {
+			$record = htmlentities (strtr ($record, $convertFrom, $convertTo));
+		} else {
+			
+			# If an array, clean each item
+			foreach ($record as $name => $details) {
+				$record[$name] = htmlentities (strtr ($details, $convertFrom, $convertTo));
+			}
+		}
+		
+		# Return the record
+		return $record;
 	}
 	
 	
