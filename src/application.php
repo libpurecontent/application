@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.15
+ * Version 1.16
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -191,6 +191,28 @@ class application
 		
 		# Otherwise return an empty string
 		return '';
+	}
+	
+	
+	# Function to format a minimised URL (e.g. www.site.com/subdirectory rather than http://www.site.com/subdirectory/)
+	function urlPresentational ($url)
+	{
+		# Trim whitespace
+		$url = trim ($url);
+		
+		# Remove trailing slash if there is only one subdirectory (or none)
+		if (substr_count ($url, '/') <= 4) {
+			if (substr ($url, -1) == '/') {$url = substr ($url, 0, -1);}
+		}
+		
+		# Remove http:// from the start if followed by www
+		if (substr ($url, 0, 10) == 'http://www') {$url = substr ($url, 7);}
+		
+		# Replace %20 with a space
+		$url = str_replace ('%20', ' ', $url);
+		
+		# Return the result
+		return $url;
 	}
 	
 	
