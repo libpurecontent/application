@@ -670,6 +670,27 @@ class application
 		# Return the assembled and validated string
 		return $time;
 	}
+	
+	
+	# Function to convert a two-character year to a four-character year
+	function convertYearToFourCharacters ($year, $autoCenturyConversationLastYear = 69)
+	{
+		# Check that the value given is an integer
+		if (!is_numeric ($year)) {return false;}
+		
+		# If the value is empty, return empty
+		if ($year == '') {return $year;}
+		
+		# If $add is true, use the function to add leading figures
+		if (strlen ($year) == 2) {
+			
+			# Add either 19 or 20 as considered appropriate
+			$year = (($year <= $autoCenturyConversationLastYear) ? '20' : '19') . $year;
+		}
+		
+		# Return the result
+		return ($year);
+	}
 }
 
 ?>
