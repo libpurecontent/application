@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.13
+ * Version 1.14
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -371,6 +371,38 @@ class application
 		
 		# Otherwise return false
 		return false;
+	}
+	
+	
+	# Function to move an array item to the start
+	function array_move_to_start ($array, $newFirstName)
+	{
+		# Check whether the array is associative
+		if (application::isAssociativeArray ($array)) {
+			
+			# Extract the first item
+			$firstItem[$newFirstName] = $array[$newFirstName];
+			
+			# Unset the item from the main array
+			unset ($array[$newFirstName]);
+			
+			# Reinsert the item at the start of the main array
+			$array = $firstItem + $array;
+			
+		# If not associative, loop through until the item is found, remove then reinsert it
+		#!# This assumes there is only one instance in the array
+		} else {
+			foreach ($array as $key => $value) {
+				if ($value == $newFirstName) {
+					unset ($array[$key]);
+					array_unshift ($array, $newFirstName);
+					break;
+				}
+			}
+		}
+		
+		# Return the reordered array
+		return $array;
 	}
 	
 	
