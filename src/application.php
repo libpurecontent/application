@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.18
+ * Version 1.19
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -284,7 +284,7 @@ class application
 	function validEmail ($email)
 	{
 		# Perform the check and return the result; regexp from www.zend.com/zend/spotlight/ev12apr.php
-		return eregi ('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$', $email);
+		return eregi ('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$', $email);
 	}
 	
 	
@@ -556,6 +556,41 @@ class application
 	}
 	
 	
+	#!# Not finished - needs file handling
+	# Wrapper function to get CSV data
+	function getCsvData ($filename)
+	{
+		# Open the file
+		if (!$fileHandle = fopen ($filename, 'rb')) {return false;}
+		
+		# Get the column names
+		if (!$mappings = fgetcsv ($fileHandle, filesize ($filename))) {return false;}
+		
+		# Loop through each line of data
+		$data = array ();
+		while ($csvData = fgetcsv ($fileHandle, filesize ($filename))) {
+			
+			# Check the first item exists and set it as the row key then unset it
+			if ($rowKey = $csvData[0]) {
+				unset ($csvData[0]);
+				
+				# Loop through each item of data
+				foreach ($csvData as $key => $value) {
+					
+					# Assign the entry into the table
+					if (isSet ($mappings[$key])) {$data[$rowKey][$mappings[$key]] = $value;}
+				}
+			}
+		}
+		
+		# Close the file
+		fclose ($fileHandle); //close file 
+		
+		# Return the result
+		return $data; 
+	}
+	
+	
 	# Wrapper function to turn a (possibly multi-dimensional) associative array into a correctly-formatted CSV format (including escapes)
 	function arrayToCsv ($array, $delimiter = ',', $nestParent = false)
 	{
@@ -570,19 +605,15 @@ class application
 			if (is_array ($value)) {
 				list ($subHeaders, $subData) = application::arrayToCsv ($value, $delimiter, $key);
 				
-				# Merge the headers
-				$temporaryArray = array_merge ($headers, $subHeaders);
-				$headers = $temporaryArray;
-				
-				# Merge the subkeys
-				$temporaryArray = array_merge ($data, $subData);
-				$data = $temporaryArray;
+				# Merge the headers and subkeys
+				$headers[] = $subHeaders;
+				$data[] = $subData;
 				
 			# If the associative array is multi-dimensional, assign directly
 			} else {
 				
 				# In nested mode, prepend the each key name with the parent name
-				if ($nestParent != false) {$key = "$nestParent: " . $key;}
+				if ($nestParent) {$key = "$nestParent: $key";}
 				
 				# Add the key and value to arrays of the headers and data
 				$headers[] = application::csvSafeDataCell ($key, $delimiter);
@@ -613,8 +644,7 @@ class application
 		# $data = str_replace ("\r\n", "\n", $data);
 		
 		# If an item contains the delimiter or line breaks, surround with quotes
-		#!# Research further: adding " round a string which includes "" seems to be optional for Excel
-		if ((strpos ($data, $delimiter) !== false) || (strpos ($data, "\n") !== false)) {$data = '"' . $data . '"';}
+		if ((strpos ($data, $delimiter) !== false) || (strpos ($data, "\n") !== false) || (strpos ($data, '"') !== false)) {$data = '"' . $data . '"';}
 		
 		# Return the cleaned data cell
 		return $data;
