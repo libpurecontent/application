@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.10
+ * Version 1.1.11
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -435,21 +435,23 @@ class application
 	function createFileFromFullPath ($file, $data, $addStamp = false)
 	{
 		# Determine the new file's directory location
-		$newFileDirectory = dirname ($file);
+		$newDirectory = dirname ($file);
 		
 		# Iteratively create the directory if it doesn't already exist
-		if (!is_dir ($newFileDirectory)) {
+		if (!is_dir ($newDirectory)) {
 			umask (0);
-			if (!mkdir ($newFileDirectory, 0775, $recursive = true)) {
+			if (strstr (PHP_OS, 'WIN')) {$newDirectory = str_replace ('/', '\\', $newDirectory);}
+			if (!mkdir ($newDirectory, 0775, $recursive = true)) {
 				#!# Consider better error handling here
-				echo "<p class=\"error\">There was a problem creating folders in the filestore.</p>";
+				#echo "<p class=\"error\">There was a problem creating folders in the filestore.</p>";
 				return false;
 			}
 		}
 		
 		# Add either '.old' (for '.old') or username.timestamp (for true) to the file if required
+		#!# {$this->user is completely bogus but works when this method is being run from with an application which sets it}
 		if ($addStamp) {
-			$file .= ($addStamp === '.old' ? '.old' : '.' . date ('Ymd-His') . ".{$this->user}");
+			$file .= ($addStamp === '.old' ? '.old' : '.' . date ('Ymd-His') . (isSet ($this->user) ? ".{$this->user}" : ''));
 		}
 		
 		# Write the file
@@ -460,8 +462,8 @@ class application
 			return false;
 		}
 		
-		# Return true if everything worked
-		return true;
+		# Return the filename (which will equate to boolean true) if everything worked
+		return $file;
 	}
 	
 	
@@ -564,6 +566,32 @@ class application
 			default:
 				return $size;
 		}
+	}
+	
+	
+	# Function to create an unordered list HTML
+	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false)
+	{
+		# Return an empty string if no items
+		if (empty ($array)) {return '';}
+		
+		# Prepare the tab string
+		$tabs = str_repeat ("\t", ($parentTabLevel));
+		
+		# Build the list
+		$html = "\n$tabs<ul" . ($className ? " class=\"$className\"" : '') . '>';
+		foreach ($array as $item) {
+			
+			# Skip an item if the item is empty and the flag is set to ignore these
+			if (($ignoreEmpty) && (empty ($item))) {continue;}
+			
+			# Add the item to the HTML
+			$html .= "\n$tabs\t<li>" . ($sanitise ? htmlentities ($item) : $item) . '</li>';
+		}
+		$html .= "\n$tabs</ul>";
+		
+		# Return the result
+		return $html;
 	}
 	
 	
