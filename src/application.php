@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1
+ * Version 1.11
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -30,7 +30,7 @@ class application
 	function throwError ($number, $diagnosisDetails = '')
 	{
 		# Define the default error message if the specified error number does not exist
-		$errorMessage = (isSet ($this->errors[$number]) ? $this->errors[$number] : 'A strange yet unknown error has occurred.');
+		$errorMessage = (isSet ($this->errors[$number]) ? $this->errors[$number] : "A strange yet unknown error (#$number) has occurred.");
 		
 		# Show the error message
 		$userErrors[] = 'Error: ' . $errorMessage . ' The administrator has been notified of this problem.';
@@ -133,6 +133,24 @@ class application
 	}
 	
 	
+	# Function to check whether an array is associative, i.e. whether any keys are not numeric
+	function isAssociativeArray ($array)
+	{
+		# Return false if not an array
+		if (!is_array ($array)) {return false;}
+		
+		# Loop through each and return true if any non-integer keys are found
+		foreach ($array as $key => $value) {
+			if (!is_int ($key)) {
+				return true;
+			}
+		}
+		
+		# Otherwise return false as all keys are numeric
+		return false;
+	}
+	
+	
 	/*
 	# Function to get the longest key name length in an array
 	function longestKeyNameLength ($array)
@@ -154,11 +172,26 @@ class application
 	*/
 	
 	
+	# Function to return a correctly supplied URL value
+	function urlSuppliedValue ($urlArgumentKey, $available)
+	{
+		# If the $urlArgumentKey is defined in the URL and it exists in the list of available items, return its value
+		if (isSet ($_GET[$urlArgumentKey])) {
+			if (in_array ($_GET[$urlArgumentKey], $available)) {
+				return $_GET[$urlArgumentKey];
+			}
+		}
+		
+		# Otherwise return an empty string
+		return '';
+	}
+	
+	
 	# Function to send administrative alerts
 	function sendAdministrativeAlert ($administratorEmail, $applicationName, $subject, $message)
 	{
 		# Define standard e-mail headers
-		$mailheaders = "From: [$applicationName] <" . $administratorEmail . '>';
+		$mailheaders = "From: $applicationName <" . $administratorEmail . '>';
 		
 		# Send the message
 		mail ($administratorEmail, $subject, wordwrap ($message), $mailheaders);
