@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.19
+ * Version 1.1.10
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -71,11 +71,15 @@ class application
 	
 	
 	# Function to send an HTTP header such as a 404; note that output buffering must have been switched on at server level
-	function sendHeader ($type)
+	function sendHeader ($statusCode, $location = false)
 	{
 		# Select the appropriate header
-		switch ($type) {
+		switch ($statusCode) {
 			
+			case '302':
+				header ("Location: $location");
+				break;
+				
 			case '404':
 				header ('HTTP/1.0 404 Not Found');
 				break;
@@ -121,7 +125,7 @@ class application
 	
 	
 	# Function to check whether all elements of an array are empty
-	function allEmpty ($array)
+	function allArrayElementsEmpty ($array)
 	{
 		# Ensure the variable is an array if not already
 		$array = application::ensureArray ($array);
@@ -368,7 +372,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function dumpDataToTable ($array, $tableHeadingSubstitutions = array ())
+	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines')
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -388,7 +392,7 @@ class application
 		$columns = array_keys ($value);
 		
 		# Construct the database and add the data in
-		$html  = "\n\n" . '<table>';
+		$html  = "\n\n" . "<table class=\"$class\">";
 		$html .= "\n\t" . '<tr>';
 		$html .= "\n\t\t" . "<th></th>";
 		foreach ($columns as $column) {
@@ -424,6 +428,40 @@ class application
 				return true;
 			}
 		}
+	}
+	
+	
+	# Function to create a file based on a full path supplied
+	function createFileFromFullPath ($file, $data, $addStamp = false)
+	{
+		# Determine the new file's directory location
+		$newFileDirectory = dirname ($file);
+		
+		# Iteratively create the directory if it doesn't already exist
+		if (!is_dir ($newFileDirectory)) {
+			umask (0);
+			if (!mkdir ($newFileDirectory, 0775, $recursive = true)) {
+				#!# Consider better error handling here
+				echo "<p class=\"error\">There was a problem creating folders in the filestore.</p>";
+				return false;
+			}
+		}
+		
+		# Add either '.old' (for '.old') or username.timestamp (for true) to the file if required
+		if ($addStamp) {
+			$file .= ($addStamp === '.old' ? '.old' : '.' . date ('Ymd-His') . ".{$this->user}");
+		}
+		
+		# Write the file
+		#!# The @ is acceptable assuming all calling programs eventually log this problem somehow; it is put here because those which do will end up having errors thrown into the logs when they are actually being handled
+		if (!@file_put_contents ($file, $data)) {
+			#!# Consider better error handling here; the following line also removed
+			#!# echo "<p class=\"error\">There was a problem creating a new file in the filestore.</p>";
+			return false;
+		}
+		
+		# Return true if everything worked
+		return true;
 	}
 	
 	
@@ -558,7 +596,7 @@ class application
 	
 	#!# Not finished - needs file handling
 	# Wrapper function to get CSV data
-	function getCsvData ($filename)
+	function getCsvData ($filename, $getHeaders = false)
 	{
 		# Open the file
 		if (!$fileHandle = fopen ($filename, 'rb')) {return false;}
@@ -584,10 +622,10 @@ class application
 		}
 		
 		# Close the file
-		fclose ($fileHandle); //close file 
+		fclose ($fileHandle);
 		
 		# Return the result
-		return $data; 
+		return $data;
 	}
 	
 	
