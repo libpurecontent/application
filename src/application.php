@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.11
+ * Version 1.13
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -356,6 +356,21 @@ class application
 				return true;
 			}
 		}
+	}
+	
+	
+	# Function to create a case-insensitive version of in_array
+	function iin_array ($needle, $haystack)
+	{
+		# Return true if the needle is in the haystack
+		foreach ($haystack as $item) {
+			if (strtolower ($item) == strtolower ($needle)) {
+				return true;
+			}
+		}
+		
+		# Otherwise return false
+		return false;
 	}
 	
 	
