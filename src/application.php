@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.11
+ * Version 1.1.12
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -70,6 +70,14 @@ class application
 	}
 	
 	
+	# Function to get the base URL (non-slash terminated)
+	function getBaseUrl ()
+	{
+		# Return the value
+		return dirname (ereg_replace ("^{$_SERVER['DOCUMENT_ROOT']}", '', $_SERVER['SCRIPT_FILENAME']));
+	}
+	
+	
 	# Function to send an HTTP header such as a 404; note that output buffering must have been switched on at server level
 	function sendHeader ($statusCode, $location = false)
 	{
@@ -90,16 +98,14 @@ class application
 	# Generalised support function to allow quick dumping of form data to screen, for debugging purposes
 	function dumpData ($data)
 	{
-		# Show an array as a preformatted dump
+		# Show the data
+		echo "\n" . '<pre class="debug">DEBUG: ';
 		if (is_array ($data)) {
-			echo "\n" . '<pre class="debug">DEBUG: ';
 			print_r ($data);
-			echo "\n</pre>";
 		} else {
-			
-			# Show a non-array value as a paragraph
-			echo "\n<p class=\"debug\">DEBUG: $data</p>";
+			echo $data;
 		}
+		echo "\n</pre>";
 	}
 	
 	
