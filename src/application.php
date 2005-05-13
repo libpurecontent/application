@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.12
+ * Version 1.1.13
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -240,6 +240,25 @@ class application
 		
 		# Return the record
 		return $record;
+	}
+	
+	
+	# Function to format free text
+	function formatTextBlock ($text, $paragraphClass = NULL)
+	{
+		# Remove any windows line breaks
+		$text = str_replace ("\r\n", "\n", $text);
+		
+		# Perform the conversion
+		$text = trim ($text);
+		
+		$text = str_replace ("\n\n", '</p><p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .'>', $text);
+		$text = str_replace ("\n", '<br />', $text);
+		$text = str_replace (array ('</p>', '<br />'), array ("</p>\n", "<br />\n"), $text);
+		$text = '<p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .">$text</p>";
+		
+		# Return the text
+		return $text;
 	}
 	
 	
@@ -598,6 +617,45 @@ class application
 		
 		# Return the result
 		return $html;
+	}
+	
+	
+	# Function to create a jumplist form
+	function htmlJumplist ($values, $selected = '', $action = '', $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist')
+	{
+		# Return an empty string if no items
+		if (empty ($values)) {return '';}
+		
+		# Prepare the tab string
+		$tabs = str_repeat ("\t", ($parentTabLevel));
+		
+		# Build the list
+		foreach ($values as $value => $visible) {
+			$fragments[] = "<option value=\"{$value}\"" . ($value == $selected ? ' selected="selected"' : '') . ">$visible</option>";
+		}
+		
+		# Construct the HTML
+		$html  = "\n\n$tabs" . "<div class=\"$class\">Go to:";
+		$html .= "\n$tabs\t" . "<form method=\"post\" action=\"$action\" name=\"$name\">";
+		$html .= "\n$tabs\t\t" . "<select name=\"$name\">";
+		$html .= "\n$tabs\t\t\t" . implode ("\n$tabs\t\t\t", $fragments);
+		$html .= "\n$tabs\t\t" . '</select>';
+		$html .= "\n$tabs\t\t" . '<input type="submit" value="Go!" class="button" />';
+		$html .= "\n$tabs\t" . '</form>';
+		$html .= "\n$tabs" . '</div>' . "\n";
+		
+		# Return the result
+		return $html;
+	}
+	
+	
+	# Function to process the jumplist
+	function jumplistProcessor ($name = 'jumplist')
+	{
+		# If posted, jump
+		if (isSet ($_POST[$name])) {
+			application::sendHeader (302, $_SERVER['_SITE_URL'] . $_POST[$name]);
+		}
 	}
 	
 	
