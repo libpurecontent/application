@@ -397,7 +397,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines')
+	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -406,9 +406,10 @@ class application
 		$dataHtml = '';
 		foreach ($array as $key => $value) {
 			$dataHtml .= "\n\t" . '<tr>';
-			$dataHtml .= "\n\t\t" . "<td><strong>$key</strong></td>";
+			if ($showKey) {$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";}
 			foreach ($value as $valueKey => $valueData) {
-				$dataHtml .= "\n\t\t" . '<td>' . application::encodeEmailAddress (htmlentities ($array[$key][$valueKey])) . '</td>';
+				$data = $array[$key][$valueKey];
+				$dataHtml .= "\n\t\t" . '<td>' . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . '</td>';
 			}
 			$dataHtml .= "\n\t" . '</tr>';
 		}
@@ -419,10 +420,10 @@ class application
 		# Construct the database and add the data in
 		$html  = "\n\n" . "<table class=\"$class\">";
 		$html .= "\n\t" . '<tr>';
-		$html .= "\n\t\t" . "<th></th>";
+		if ($showKey) {$html .= "\n\t\t" . "<th></th>";}
 		foreach ($columns as $column) {
 			$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-			$html .= "\n\t\t" . '<th>' . $columnTitle . '</th>';
+			$html .= "\n\t\t" . '<th>' . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 		}
 		$html .= "\n\t" . '</tr>';
 		$html .= $dataHtml;
@@ -595,7 +596,7 @@ class application
 	
 	
 	# Function to create an unordered list HTML
-	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false)
+	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false)
 	{
 		# Return an empty string if no items
 		if (empty ($array)) {return '';}
@@ -611,7 +612,9 @@ class application
 			if (($ignoreEmpty) && (empty ($item))) {continue;}
 			
 			# Add the item to the HTML
-			$html .= "\n$tabs\t<li>" . ($sanitise ? htmlentities ($item) : $item) . '</li>';
+			if ($sanitise) {$item = htmlentities ($item);}
+			if ($nl2br) {$item = nl2br ($item);}
+			$html .= "\n$tabs\t<li>" . $item . '</li>';
 		}
 		$html .= "\n$tabs</ul>";
 		
