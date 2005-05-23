@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.13
+ * Version 1.1.15
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -493,6 +493,37 @@ class application
 	}
 	
 	
+	# Function to check whether an area is writable; provides facilities additional to is_writable
+	function directoryIsWritable ($root, $location = '/')
+	{
+		# If there is a trailing slash, remove it
+		if (substr ($location, -1) == '/') {$location = substr ($location, 0, -1);}
+		
+		# Split the directories up
+		$directories = explode ('/', $location);
+		
+		# Loop through the directories in the list
+		while (count ($directories)) {
+			
+			# Re-compile the location
+			$directory = $root . implode ('/', $directories);
+			
+			# If the directory exists, test for its writability; this will get called at least once because the root location will get tested at some point
+			if (is_dir ($directory)) {
+				if (!is_writable ($directory)) {
+					return false;
+				}
+			}
+			
+			# Remove the last directory in the list
+			array_pop ($directories);
+		}
+		
+		# Otherwise return true
+		return true;
+	}
+	
+	
 	# Function to create a case-insensitive version of in_array
 	function iin_array ($needle, $haystack)
 	{
@@ -624,7 +655,7 @@ class application
 	
 	
 	# Function to create a jumplist form
-	function htmlJumplist ($values, $selected = '', $action = '', $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist')
+	function htmlJumplist ($values, $selected = '', $action = '', $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = 'Go to:')
 	{
 		# Return an empty string if no items
 		if (empty ($values)) {return '';}
@@ -638,7 +669,7 @@ class application
 		}
 		
 		# Construct the HTML
-		$html  = "\n\n$tabs" . "<div class=\"$class\">Go to:";
+		$html  = "\n\n$tabs" . "<div class=\"$class\">$introductoryText";
 		$html .= "\n$tabs\t" . "<form method=\"post\" action=\"$action\" name=\"$name\">";
 		$html .= "\n$tabs\t\t" . "<select name=\"$name\">";
 		$html .= "\n$tabs\t\t\t" . implode ("\n$tabs\t\t\t", $fragments);
@@ -655,9 +686,10 @@ class application
 	# Function to process the jumplist
 	function jumplistProcessor ($name = 'jumplist')
 	{
-		# If posted, jump
+		# If posted, jump, adding the current site's URL if the target doesn't start with http(s);//
 		if (isSet ($_POST[$name])) {
-			application::sendHeader (302, $_SERVER['_SITE_URL'] . $_POST[$name]);
+			$location = (eregi ('http://|https://', $_POST[$name]) ? '' : $_SERVER['_SITE_URL']) . $_POST[$name];
+			application::sendHeader (302, $location);
 		}
 	}
 	
