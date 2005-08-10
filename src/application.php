@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.15
+ * Version 1.1.16
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -405,6 +405,8 @@ class application
 		# Assemble the data cells
 		$dataHtml = '';
 		foreach ($array as $key => $value) {
+			if (!$value) {continue;}
+			$headings = $value;
 			$dataHtml .= "\n\t" . '<tr>';
 			if ($showKey) {$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";}
 			foreach ($value as $valueKey => $valueData) {
@@ -415,7 +417,7 @@ class application
 		}
 		
 		# Obtain the column headings
-		$columns = array_keys ($value);
+		$columns = array_keys ($headings);
 		
 		# Construct the database and add the data in
 		$html  = "\n\n" . "<table class=\"$class\">";
@@ -651,46 +653,6 @@ class application
 		
 		# Return the result
 		return $html;
-	}
-	
-	
-	# Function to create a jumplist form
-	function htmlJumplist ($values, $selected = '', $action = '', $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = 'Go to:')
-	{
-		# Return an empty string if no items
-		if (empty ($values)) {return '';}
-		
-		# Prepare the tab string
-		$tabs = str_repeat ("\t", ($parentTabLevel));
-		
-		# Build the list
-		foreach ($values as $value => $visible) {
-			$fragments[] = "<option value=\"{$value}\"" . ($value == $selected ? ' selected="selected"' : '') . ">$visible</option>";
-		}
-		
-		# Construct the HTML
-		$html  = "\n\n$tabs" . "<div class=\"$class\">$introductoryText";
-		$html .= "\n$tabs\t" . "<form method=\"post\" action=\"$action\" name=\"$name\">";
-		$html .= "\n$tabs\t\t" . "<select name=\"$name\">";
-		$html .= "\n$tabs\t\t\t" . implode ("\n$tabs\t\t\t", $fragments);
-		$html .= "\n$tabs\t\t" . '</select>';
-		$html .= "\n$tabs\t\t" . '<input type="submit" value="Go!" class="button" />';
-		$html .= "\n$tabs\t" . '</form>';
-		$html .= "\n$tabs" . '</div>' . "\n";
-		
-		# Return the result
-		return $html;
-	}
-	
-	
-	# Function to process the jumplist
-	function jumplistProcessor ($name = 'jumplist')
-	{
-		# If posted, jump, adding the current site's URL if the target doesn't start with http(s);//
-		if (isSet ($_POST[$name])) {
-			$location = (eregi ('http://|https://', $_POST[$name]) ? '' : $_SERVER['_SITE_URL']) . $_POST[$name];
-			application::sendHeader (302, $location);
-		}
 	}
 	
 	
