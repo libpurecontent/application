@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.16
+ * Version 1.1.17
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -96,9 +96,10 @@ class application
 	
 	
 	# Generalised support function to allow quick dumping of form data to screen, for debugging purposes
-	function dumpData ($data)
+	function dumpData ($data, $hide = false)
 	{
 		# Show the data
+		if ($hide) {echo "\n<!--";}
 		echo "\n" . '<pre class="debug">DEBUG: ';
 		if (is_array ($data)) {
 			print_r ($data);
@@ -106,6 +107,7 @@ class application
 			echo $data;
 		}
 		echo "\n</pre>";
+		if ($hide) {echo "\n-->";}
 	}
 	
 	
@@ -295,25 +297,26 @@ class application
 	}
 	
 	
-	#!# Scrap this eventually!
-	# Function to initialise form input
-	function initialiseFormInput ($formName, $fields)
+	# Function to check that an e-mail address (or all addresses) are valid
+	function validEmail ($email, $domainPartOnly = false)
 	{
-		# Initialise each array value
-		foreach ($fields as $field) {
-			$form[$field] = (isSet ($_POST[$formName][$field]) ? htmlentities (trim ($_POST[$formName][$field])) : '');
+		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php
+		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[_a-z0-9-]+(\.[_a-z0-9-]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
+		
+		# If not an array, perform the check and return the result
+		if (!is_array ($email)) {
+			return eregi ($regexp, $email);
 		}
 		
-		# Return the initialise array
-		return $form;
-	}
-	
-	
-	# Function to check that an e-mail address is valid
-	function validEmail ($email)
-	{
-		# Perform the check and return the result; regexp from www.zend.com/zend/spotlight/ev12apr.php
-		return eregi ('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$', $email);
+		# If an array, check each and return the flag
+		$allValidEmail = true;
+		foreach ($email as $value) {
+			if (!eregi ($regexp, $value)) {
+				$allValidEmail = false;
+				break;
+			}
+		}
+		return $allValidEmail;
 	}
 	
 	
@@ -379,13 +382,13 @@ class application
 		$startingTag = "<$tag";
 		$closingTag = "</$tag>";
 		
-		# Search through the file case-insensitively
+		# Search through the contents case-insensitively
 		$html = stristr ($contents, $startingTag);
 		
 		# Extract what is between the $startingTag and the $closingTag
 		$title = '';
 		$result = eregi ("($startingTag.+$closingTag)", $html, $temporary);
-		if ($result) { 
+		if ($result) {
 			eregi ("([^>]*$closingTag)", $temporary[0], $out);
 			$title = trim ($out[0]); 
 		}
@@ -776,6 +779,28 @@ class application
 		# Return the cleaned data cell
 		return $data;
 	}
+}
+
+
+# Ensure that the file_put_contents function exists - taken from http://cvs.php.net/co.php/pear/PHP_Compat/Compat/Function/file_put_contents.php?r=1.9
+if (!function_exists('file_put_contents'))
+{
+    function file_put_contents ($filename, $content)
+    {
+        $bytes = 0;
+
+        if (($file = fopen($filename, 'w+')) === false) {
+            return false;
+        }
+
+        if (($bytes = fwrite($file, $content)) === false) {
+            return false;
+        }
+
+        fclose($file);
+
+        return $bytes;
+    }
 }
 
 ?>
