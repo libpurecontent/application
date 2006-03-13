@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-4
- * Version 1.1.17
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
+ * Version 1.1.18
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -400,7 +400,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -433,6 +433,75 @@ class application
 		$html .= "\n\t" . '</tr>';
 		$html .= $dataHtml;
 		$html .= "\n" . '</table>';
+		
+		# Return the HTML
+		return $html;
+	}
+	
+	
+	# Compatibility function
+	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
+	{
+		return self::htmlTable ($array, $tableHeadingSubstitutions, $class, $showKey, $uppercaseHeadings, $allowHtml);
+	}
+	
+	
+	# Function to create a definition list
+	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true)
+	{
+		return self::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $dlFormat = true);
+	}
+	
+	
+	# Function to create a keyed HTML table; $dlFormat is PRIVATE and should not be used externally
+	function htmlTableKeyed ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $dlFormat = false)
+	{
+		# Check that the data is an array
+		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
+		
+		# Perform conversions
+		foreach ($array as $key => $value) {
+			
+			# Skip keys in the array
+			if ($keySubstitutions && array_key_exists ($key, $keySubstitutions) && $keySubstitutions[$key] === NULL) {
+				unset ($array[$key]);
+				continue;
+			}
+			
+			# Omit empty or substitute for a string (as required) if there is no value
+			if ($omitEmpty && !$value) {
+				if (is_string ($omitEmpty)) {
+					$array[$key] = $omitEmpty;
+					$value = $omitEmpty;
+				} else {
+					unset ($array[$key]);
+					continue;
+				}
+			}
+			
+			# Perform substitutions
+			if (array_key_exists ($key, $keySubstitutions)) {
+				$newKeyName = $keySubstitutions[$key];
+				$array[$newKeyName] = $value;
+				unset ($array[$key]);
+				continue;
+			}
+		}
+		
+		# Return if no data
+		if (!$array) {
+			return false;
+		}
+		
+		# Construct the table and add the data in
+		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"$class\">";
+		foreach ($array as $key => $value) {
+			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
+			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . $key . ($showColons ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . $value . ($dlFormat ? '</dd>' : '</td>');
+			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
+		}
+		$html .= "\n" . ($dlFormat ? '</dl>' : '</table>');
 		
 		# Return the HTML
 		return $html;
