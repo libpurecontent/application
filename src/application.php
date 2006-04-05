@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.18
+ * Version 1.1.19
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -183,6 +183,91 @@ class application
 		
 		# Otherwise return false as all keys are numeric
 		return false;
+	}
+	
+	
+	# Function to determine if an array is multidimensional; returns 1 if all are multidimensional, 0 if not at all, -1 if mixed
+	function isMultidimensionalArray ($array)
+	{
+		# Return NULL if not an array
+		if (!is_array ($array)) {return NULL;}
+		
+		# Loop through the array and find cases where the elements are multidimensional or non-multidimensional
+		$multidimensionalFound = false;
+		$nonMultidimensionalFound = false;
+		foreach ($array as $key => $value) {
+			if (is_array ($value)) {
+				$multidimensionalFound = true;
+			} else {
+				$nonMultidimensionalFound = true;
+			}
+		}
+		
+		# Return the outcome
+		if ($multidimensionalFound && $nonMultidimensionalFound) {return -1;}	// Mixed array (NB: a check for if(-1) evaluates to TRUE)
+		if ($multidimensionalFound) {return 1;}	// All elements multi-dimensional
+		if ($nonMultidimensionalFound) {return 0;}	// Non-multidimensional
+	}
+	
+	
+	# Iterative function to ensure a hierarchy of values (for either a simple array or a one-level multidimensional array) is arranged associatively
+	function ensureValuesArrangedAssociatively ($originalValues, $forceAssociative, $canIterateFurther = true)
+	{
+		# Loop through each value and determine whether the non-multidimensional elements should be treated as associative or not
+		$scalars = array ();
+		foreach ($originalValues as $key => $value) {
+			if (!is_array ($value)) {
+				$scalars[$key] = $value;
+			}
+		}
+		$scalarsAreAssociative = ($forceAssociative || application::isAssociativeArray ($scalars));
+		
+		# Loop through each value
+		$values = array ();
+		foreach ($originalValues as $key => $value) {
+			
+			# If the value is an array but further iteration is disallowed, return false
+			#!# This could be supported if iteratively applied and then display is supported higher up in the class hierarchy
+			if (is_array ($value) && !$canIterateFurther) {return false;}
+			
+			# If the value is not an array, assign the index or the value to be used as the key, and add the value to the array
+			if (!is_array ($value)) {
+				$key = ($scalarsAreAssociative ? $key : $value);
+				$values[$key] = $value;
+			} else {
+				
+				# For an array, iterate to obtain the values, carrying back any thrown error
+				if (!$value = application::ensureValuesArrangedAssociatively ($value, $forceAssociative, false)) {
+					return false;
+				}
+			}
+			
+			# Add the value (or array of subvalues) to the array, in the same structure
+			$values[$key] = $value;
+		}
+		
+		# Return the values
+		return $values;
+	}
+	
+	
+	# Function to flatten a one-level multidimensional array
+	#!# This could be made properly iterative
+	function flattenMultidimensionalArray ($values)
+	{
+		# Arrange the values as a simple associative array
+		foreach ($values as $key => $value) {
+			if (!is_array ($value)) {
+				$flattenedValues[$key] = $value;
+			} else {
+				foreach ($value as $subKey => $subValue) {
+					$flattenedValues[$subKey] = $subValue;
+				}
+			}
+		}
+		
+		# Return the flattened version
+		return $flattenedValues;
 	}
 	
 	
@@ -442,14 +527,14 @@ class application
 	# Compatibility function
 	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
 	{
-		return self::htmlTable ($array, $tableHeadingSubstitutions, $class, $showKey, $uppercaseHeadings, $allowHtml);
+		return application::htmlTable ($array, $tableHeadingSubstitutions, $class, $showKey, $uppercaseHeadings, $allowHtml);
 	}
 	
 	
 	# Function to create a definition list
 	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true)
 	{
-		return self::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $dlFormat = true);
+		return application::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $dlFormat = true);
 	}
 	
 	
