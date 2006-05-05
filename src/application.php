@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.19
+ * Version 1.1.20
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -23,6 +23,45 @@ class application
 		$this->applicationName = $applicationName;
 		$this->errors = $errors;
 		$this->administratorEmail = $administratorEmail;
+	}
+	
+	
+	# Function to merge the arguments; note that $errors returns the errors by reference and not as a result from the method
+	function assignArguments (&$errors, $suppliedArguments, $argumentDefaults, $functionName, $subargument = NULL)
+	{
+		# Merge the defaults: ensure that arguments with a non-null default value are set (throwing an error if not), or assign the default value if none is specified
+		foreach ($argumentDefaults as $argument => $defaultValue) {
+			if (is_null ($defaultValue)) {
+				if (!isSet ($suppliedArguments[$argument])) {
+					$errors['absent' . ucfirst ($functionName) . ucfirst ($argument)] = "No '<strong>$argument</strong>' has been set in the '<strong>$functionName</strong>' specification.";
+					$arguments[$argument] = $functionName;
+				} else {
+					$arguments[$argument] = $suppliedArguments[$argument];
+				}
+				
+			# If a subargument is supplied, deal with subarguments
+			} elseif ($subargument && ($argument == $subargument)) {
+				foreach ($defaultValue as $subArgument => $subDefaultValue) {
+					if (is_null ($subDefaultValue)) {
+						if (!isSet ($suppliedArguments[$argument][$subArgument])) {
+							$errors['absent' . ucfirst ($fieldType) . ucfirst ($argument) . ucfirst ($subArgument)] = "No '<strong>$subArgument</strong>' has been set for a '<strong>$argument</strong>' argument in the $fieldType specification.";
+							$arguments[$argument][$subArgument] = $fieldType;
+						} else {
+							$arguments[$argument][$subArgument] = $suppliedArguments[$argument][$subArgument];
+						}
+					} else {
+						$arguments[$argument][$subArgument] = (isSet ($suppliedArguments[$argument][$subArgument]) ? $suppliedArguments[$argument][$subArgument] : $subDefaultValue);
+					}
+				}
+				
+			# Otherwise assign argument as normal
+			} else {
+				$arguments[$argument] = (isSet ($suppliedArguments[$argument]) ? $suppliedArguments[$argument] : $defaultValue);
+			}
+		}
+		
+		# Return the arguments
+		return $arguments;
 	}
 	
 	
