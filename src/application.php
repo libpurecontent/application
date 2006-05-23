@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.20
+ * Version 1.1.21
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -354,6 +354,7 @@ class application
 		$convertTo = "'f\".**^\xa6<\xbc\xb4''\"\"---~ \xa8>\xbd\xb8\xbe";
 		
 		# If not an array, clean the item
+		#!# Convert to using htmlentitiesArrayRecursive
 		if (!is_array ($record)) {
 			$record = htmlentities (strtr ($record, $convertFrom, $convertTo));
 		} else {
@@ -366,6 +367,21 @@ class application
 		
 		# Return the record
 		return $record;
+	}
+	
+	
+	# Recursive function to do htmlentities conversion through a tree
+	function htmlentitiesArrayRecursive ($array, $convertKeys = true)
+	{
+		# Loop through the array and convert both key and value to entity-safe characters
+		foreach ($array as $key => $value) {
+			if ($convertKeys) {$key = htmlentities ($key);}
+			$value = (is_array ($value) ? application::htmlentitiesArrayRecursive ($value) : str_replace ('È', '&Egrave;', $value));
+			$cleanedArray[$key] = $value;
+		}
+		
+		# Return the cleaned array
+		return $cleanedArray;
 	}
 	
 	
@@ -524,7 +540,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -534,11 +550,17 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$value) {continue;}
 			$headings = $value;
+			if ($showKey) {
+				$dataHtml .= "\n\t" . '<tr>';
+				$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";
+				$dataHtml .= "\n\t" . '</tr>';
+			}
 			$dataHtml .= "\n\t" . '<tr>';
-			if ($showKey) {$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";}
+			$i = 0;
 			foreach ($value as $valueKey => $valueData) {
+				$i++;
 				$data = $array[$key][$valueKey];
-				$dataHtml .= "\n\t\t" . '<td>' . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . '</td>';
+				$dataHtml .= "\n\t\t" . ($i == 1 ? '<td class="key">' : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . (($showColons && ($i == 1)) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= "\n\t" . '</tr>';
 		}
@@ -550,9 +572,11 @@ class application
 		$html  = "\n\n" . "<table class=\"$class\">";
 		$html .= "\n\t" . '<tr>';
 		if ($showKey) {$html .= "\n\t\t" . "<th></th>";}
-		foreach ($columns as $column) {
-			$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-			$html .= "\n\t\t" . '<th>' . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+		if ($tableHeadingSubstitutions !== false) {
+			foreach ($columns as $column) {
+				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
+				$html .= "\n\t\t" . '<th>' . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+			}
 		}
 		$html .= "\n\t" . '</tr>';
 		$html .= $dataHtml;
