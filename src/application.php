@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.21
+ * Version 1.1.22
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -560,7 +560,7 @@ class application
 			foreach ($value as $valueKey => $valueData) {
 				$i++;
 				$data = $array[$key][$valueKey];
-				$dataHtml .= "\n\t\t" . ($i == 1 ? '<td class="key">' : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . (($showColons && ($i == 1)) ? ':' : '') . '</td>';
+				$dataHtml .= "\n\t\t" . ($i == 1 ? '<td class="key">' : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= "\n\t" . '</tr>';
 		}
@@ -645,7 +645,7 @@ class application
 		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"$class\">";
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
-			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . $key . ($showColons ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . $key . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
 			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . $value . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
@@ -872,6 +872,35 @@ class application
 		$html .= "\n$tabs</ul>";
 		
 		# Return the result
+		return $html;
+	}
+	
+	
+	# Function to convert a hierarchy into a hierarchical list; third argument will produce level:text (if set to true) or will carry over text as textFrom0:textFrom1:textFrom2 ... as the link (if set to false)
+	function htmlUlHierarchical ($unit, $class = 'pde', $carryOverQueryText = false, $level = 0)
+	{
+		# Work out the tab HTML
+		$tabs = str_repeat ("\t", $level);
+		
+		# Start the HTML
+		$class = ($class ? " class=\"{$class}\"" : '');
+		$html  = "\n{$tabs}<ul{$class}>";
+		
+		# Loop through each level, assembling either the query text or level:text as the link
+		foreach ($unit as $name => $contents) {
+			$queryText = ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':') . str_replace (' ', '+', $name);
+			$link = ((substr ($name, 0, 1) != '<') ? "<a href=\"{$this->baseUrl}/category/{$queryText}\">" : '');
+			$html .= "\n\t{$tabs}<li>{$link}" . htmlentities ($name) . ($link ? '</a>' : '');
+			if (is_array ($contents) && (!empty ($contents))) {
+				$html .= application::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), ($level + 1));
+			}
+			$html .= '</li>';
+		}
+		
+		# Complete the HTML
+		$html .= "\n{$tabs}</ul>";
+		
+		# Return the HTML
 		return $html;
 	}
 	
