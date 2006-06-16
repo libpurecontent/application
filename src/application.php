@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.22
+ * Version 1.1.23
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -545,17 +545,18 @@ class application
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
 		
+		# Return nothing if no data
+		if (empty ($array)) {return '';}
+		
 		# Assemble the data cells
 		$dataHtml = '';
 		foreach ($array as $key => $value) {
 			if (!$value) {continue;}
 			$headings = $value;
-			if ($showKey) {
-				$dataHtml .= "\n\t" . '<tr>';
-				$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";
-				$dataHtml .= "\n\t" . '</tr>';
-			}
 			$dataHtml .= "\n\t" . '<tr>';
+			if ($showKey) {
+				$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";
+			}
 			$i = 0;
 			foreach ($value as $valueKey => $valueData) {
 				$i++;
@@ -565,20 +566,21 @@ class application
 			$dataHtml .= "\n\t" . '</tr>';
 		}
 		
-		# Obtain the column headings
-		$columns = array_keys ($headings);
-		
-		# Construct the database and add the data in
-		$html  = "\n\n" . "<table class=\"$class\">";
-		$html .= "\n\t" . '<tr>';
-		if ($showKey) {$html .= "\n\t\t" . "<th></th>";}
+		# Construct the heading HTML
+		$headingHtml  = "\n\t" . '<tr>';
+		if ($showKey) {$headingHtml .= "\n\t\t" . "<th></th>";}
 		if ($tableHeadingSubstitutions !== false) {
+			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-				$html .= "\n\t\t" . '<th>' . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+				$headingHtml .= "\n\t\t" . '<th>' . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
 		}
-		$html .= "\n\t" . '</tr>';
+		$headingHtml .= "\n\t" . '</tr>';
+		
+		# Construct the overall heading
+		$html  = "\n\n" . "<table class=\"$class\">";
+		$html .= $headingHtml;
 		$html .= $dataHtml;
 		$html .= "\n" . '</table>';
 		
@@ -821,6 +823,37 @@ class application
 		
 		# Return the result
 		return number_format ($number) . $suffix;
+	}
+	
+	
+	# Function to convert camelCase to standard text
+	#!# Accept an array so it loops through all
+	function changeCase ($string)
+	{
+		# Special case certain words
+		$replacements = array (
+			'url' => 'URL',
+			'email' => 'e-mail',
+		);
+		
+		# Perform the conversion; based on www.php.net/ucwords#49303
+		$string = ucfirst ($string);
+		$bits = preg_split ('/([A-Z])/', $string, false, PREG_SPLIT_DELIM_CAPTURE);
+		$words = array ();
+		array_shift ($bits);
+		for ($i = 0; $i < count ($bits); ++$i) {
+			if ($i % 2) {
+				$word = strtolower ($bits[$i - 1] . $bits[$i]);
+				$word = str_replace (array_keys ($replacements), array_values ($replacements), $word);
+				$words[] = $word;
+			}
+		}
+		
+		# Compile the words
+		$string = ucfirst (implode (' ', $words));
+		
+		# Return the string
+		return $string;
 	}
 	
 	
