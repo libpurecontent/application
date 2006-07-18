@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.23
+ * Version 1.1.24
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -329,6 +329,43 @@ class application
 		return $longestLength;
 	}
 	*/
+	
+	
+	# Function to return the start,previous,next,end items in an array
+	function getPositions ($keys, $item)
+	{
+		# Ensure that the value exists in the array
+		if (!in_array ($item, $keys)) {
+			return NULL;
+		}
+		
+		# Move to the position in the array of the current item
+		foreach ($keys as $key => $value) {
+			if ($value == $item) {
+				break;
+			}
+		}
+		if (!current ($keys)) {
+			end ($keys);
+		} else {
+			prev ($keys);
+		}
+		
+		# Get the previous item in the array (then move back), resetting to the start if there is no previous
+		if (!$position['previous'] = prev ($keys)) {
+			reset ($keys);
+		} else {
+			next ($keys);
+		}
+		
+		# Assign the next item in the array (not bothering to move back) and other positions
+		$position['next'] = next ($keys);
+		$position['start'] = reset ($keys);
+		$position['end'] = end ($keys);
+		
+		# Return the position
+		return $position;
+	}
 	
 	
 	# Function to return a correctly supplied URL value
@@ -881,8 +918,8 @@ class application
 	}
 	
 	
-	# Function to create an unordered list HTML
-	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false)
+	# Function to create an unordered HTML list
+	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false)
 	{
 		# Return an empty string if no items
 		if (empty ($array)) {return '';}
@@ -900,7 +937,7 @@ class application
 			# Add the item to the HTML
 			if ($sanitise) {$item = htmlentities ($item);}
 			if ($nl2br) {$item = nl2br ($item);}
-			$html .= "\n$tabs\t<li>" . $item . '</li>';
+			$html .= "\n$tabs\t<li" . ($liClass ? " class=\"{$liClass}\"" : '') . '>' . $item . '</li>';
 		}
 		$html .= "\n$tabs</ul>";
 		
