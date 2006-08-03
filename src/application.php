@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.25
+ * Version 1.1.26
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -947,7 +947,7 @@ class application
 	
 	
 	# Function to convert a hierarchy into a hierarchical list; third argument will produce level:text (if set to true) or will carry over text as textFrom0:textFrom1:textFrom2 ... as the link (if set to false)
-	function htmlUlHierarchical ($unit, $class = 'pde', $carryOverQueryText = false, $level = 0)
+	function htmlUlHierarchical ($unit, $class = 'pde', $carryOverQueryText = false, $lastOnly = true, $lowercaseLinks = true, $level = 0)
 	{
 		# Work out the tab HTML
 		$tabs = str_repeat ("\t", $level);
@@ -958,11 +958,12 @@ class application
 		
 		# Loop through each level, assembling either the query text or level:text as the link
 		foreach ($unit as $name => $contents) {
-			$queryText = ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':') . str_replace (' ', '+', $name);
-			$link = ((substr ($name, 0, 1) != '<') ? "<a href=\"{$this->baseUrl}/category/{$queryText}\">" : '');
+			$last = $lastOnly && is_array ($contents) && (empty ($contents));
+			$queryText = ($last ? '' : ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':')) . str_replace (' ', '+', strtolower ($name));
+			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$this->baseUrl}/category/{$queryText}\">" : '');
 			$html .= "\n\t{$tabs}<li>{$link}" . htmlentities ($name) . ($link ? '</a>' : '');
 			if (is_array ($contents) && (!empty ($contents))) {
-				$html .= application::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), ($level + 1));
+				$html .= application::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), $lastOnly, $lowercaseLinks, ($level + 1));
 			}
 			$html .= '</li>';
 		}
@@ -1094,6 +1095,50 @@ class application
 		
 		# Return the cleaned data cell
 		return $data;
+	}
+	
+	
+	// create a cloud tag; based on comment posted under http://www.hawkee.com/snippet.php?snippet_id=1485
+	function tagCloud ($tags, $classBase = 'tagcloud', $sizes = 5)
+	{
+		# End if no tags
+		if (!$tags) {return false;}
+		
+		# Sort the tags
+		asort ($tags);
+		
+		// Start with the sorted list of tags and divide by the number of font sizes (buckets). Then proceed to put an even number of tags into each bucket. The only restriction is that tags of the same count can't span 2 buckets, so some buckets may have more tags than others. Because of this, the sorted list of remaining tags is divided by the remaining 'buckets' to evenly distribute the remainder of the tags and to fill as many 'buckets' as possible up to the largest font size.
+		$total_tags = count ($tags);
+		$min_tags = $total_tags / $sizes;
+		
+		$bucket_count = 1;
+		$bucket_items = 0;
+		$tags_set = 0;
+		foreach ($tags as $tag => $count) {
+			
+			// If we've met the minimum number of tags for this class and the current tag does not equal the last tag, we can proceed to the next class.
+			if (($bucket_items >= $min_tags) && ($last_count != $count) && ($bucket_count < $sizes)) {
+				$bucket_count++;
+				$bucket_items = 0;
+				
+				// Calculate a new minimum number of tags for the remaining classes.
+				$remaining_tags = $total_tags - $tags_set;
+				$min_tags = $remaining_tags / $bucket_count;
+			}
+			
+			// Set the tag to the current class.
+			$finalised[$tag] = $classBase . $bucket_count;
+			$bucket_items++;
+			$tags_set++;
+			
+			$last_count = $count;
+		}
+		
+		# Sort the list
+		ksort ($finalised);
+		
+		# Return the list
+		return $finalised;
 	}
 }
 
