@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.26
+ * Version 1.1.27
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -368,6 +368,19 @@ class application
 	}
 	
 	
+	# Function to ksort an array recursively
+	function ksortRecursive (&$array)
+	{
+		ksort ($array);
+		$keys = array_keys ($array);
+		foreach ($keys as $key) {
+			if (is_array ($array[$key])) {
+				application::ksortRecursive ($array[$key]);
+			}
+		}
+	}
+	
+	
 	# Function to return a correctly supplied URL value
 	function urlSuppliedValue ($urlArgumentKey, $available)
 	{
@@ -384,7 +397,7 @@ class application
 	
 	
 	# Function to clean up text
-	function cleanText ($record)
+	function cleanText ($record, $htmlEntitiesConversion = true)
 	{
 		# Define conversions
 		$convertFrom = "\x82\x83\x84\x85\x86\x87\x89\x8a\x8b\x8c\x8e\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f";
@@ -393,12 +406,14 @@ class application
 		# If not an array, clean the item
 		#!# Convert to using htmlentitiesArrayRecursive
 		if (!is_array ($record)) {
-			$record = htmlentities (strtr ($record, $convertFrom, $convertTo));
+			$record = strtr ($record, $convertFrom, $convertTo);
+			if ($htmlEntitiesConversion) {$record = htmlentities ($record);}
 		} else {
 			
 			# If an array, clean each item
 			foreach ($record as $name => $details) {
-				$record[$name] = htmlentities (strtr ($details, $convertFrom, $convertTo));
+				$record[$name] = strtr ($details, $convertFrom, $convertTo);
+				if ($htmlEntitiesConversion) {$record[$name] = htmlentities ($record[$name]);}
 			}
 		}
 		
@@ -464,10 +479,11 @@ class application
 	
 	
 	# Function to send administrative alerts
-	function sendAdministrativeAlert ($administratorEmail, $applicationName, $subject, $message)
+	function sendAdministrativeAlert ($administratorEmail, $applicationName, $subject, $message, $cc = false)
 	{
 		# Define standard e-mail headers
-		$mailheaders = "From: $applicationName <" . $administratorEmail . '>';
+		$mailheaders = "From: $applicationName <" . $administratorEmail . ">\n";
+		if ($cc) {$mailheaders .= "Cc: {$cc}\n";}
 		
 		# Send the message
 		mail ($administratorEmail, $subject, wordwrap ($message), $mailheaders);
@@ -577,7 +593,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -592,13 +608,13 @@ class application
 			$headings = $value;
 			$dataHtml .= "\n\t" . '<tr>';
 			if ($showKey) {
-				$dataHtml .= "\n\t\t" . "<td><strong>{$key}</strong></td>";
+				$dataHtml .= "\n\t\t" . ($addCellClasses ? "<td class=\"{$key}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
 			$i = 0;
 			foreach ($value as $valueKey => $valueData) {
 				$i++;
 				$data = $array[$key][$valueKey];
-				$dataHtml .= "\n\t\t" . ($i == 1 ? '<td class="key">' : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$dataHtml .= "\n\t\t" . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= "\n\t" . '</tr>';
 		}
@@ -610,7 +626,7 @@ class application
 			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-				$headingHtml .= "\n\t\t" . '<th>' . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+				$headingHtml .= "\n\t\t" . ($addCellClasses ? "<th class=\"{$columnTitle}\">" : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
 		}
 		$headingHtml .= "\n\t" . '</tr>';
@@ -1005,7 +1021,7 @@ class application
 	
 	#!# Not finished - needs file handling
 	# Wrapper function to get CSV data
-	function getCsvData ($filename, $getHeaders = false)
+	function getCsvData ($filename, $getHeaders = false, $assignKeys = false)
 	{
 		# Open the file
 		if (!$fileHandle = fopen ($filename, 'rb')) {return false;}
@@ -1013,13 +1029,19 @@ class application
 		# Get the column names
 		if (!$mappings = fgetcsv ($fileHandle, filesize ($filename))) {return false;}
 		
+		# Start a counter if assigning keys
+		if ($assignKeys) {$assignedKey = 0;}
+		
 		# Loop through each line of data
 		$data = array ();
 		while ($csvData = fgetcsv ($fileHandle, filesize ($filename))) {
 			
 			# Check the first item exists and set it as the row key then unset it
-			if ($rowKey = $csvData[0]) {
-				unset ($csvData[0]);
+			if ($firstRowCell = $csvData[0]) {
+				if (!$assignKeys) {unset ($csvData[0]);}
+				
+				# Determine the key name to use
+				$rowKey = ($assignKeys ? $assignedKey++ : $firstRowCell);
 				
 				# Loop through each item of data
 				foreach ($csvData as $key => $value) {
