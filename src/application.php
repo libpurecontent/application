@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.27
+ * Version 1.1.28
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -521,6 +521,16 @@ class application
 	}
 	
 	
+	# Function to make links clickable: from www.totallyphp.co.uk/code/convert_links_into_clickable_hyperlinks.htm
+	function makeClickableLinks ($text, $addMailto = false)
+	{
+		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '<a target="_blank" href="\\1">\\1</a>', $text);
+		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '\\1<a target="_blank" href="http://\\2">\\2</a>', $text);
+		if ($addMailto) {$text = eregi_replace ('([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})',    '<a href="mailto:\\1">\\1</a>', $text);}
+		return $text;
+	}
+	
+	
 	# Function to generate a password
 	function generatePassword ($length = 6, $numeric = false)
 	{
@@ -931,6 +941,23 @@ class application
 			default:
 				return $size;
 		}
+	}
+	
+	
+	# Function to regroup a data set into separate groups
+	function regroup ($data, $regroupByColumn, $removeGroupColumn = true)
+	{
+		$rearrangedData = array ();
+		foreach ($data as $key => $values) {
+			$grouping = $values[$regroupByColumn];
+			if ($removeGroupColumn) {
+				unset ($data[$key][$regroupByColumn]);
+			}
+			$rearrangedData[$grouping][$key] = $data[$key];
+		}
+		
+		# Return the data
+		return $rearrangedData;
 	}
 	
 	
