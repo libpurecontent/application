@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.28
+ * Version 1.1.29
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -27,9 +27,10 @@ class application
 	
 	
 	# Function to merge the arguments; note that $errors returns the errors by reference and not as a result from the method
-	function assignArguments (&$errors, $suppliedArguments, $argumentDefaults, $functionName, $subargument = NULL)
+	function assignArguments (&$errors, $suppliedArguments, $argumentDefaults, $functionName, $subargument = NULL, $handleErrors = false)
 	{
 		# Merge the defaults: ensure that arguments with a non-null default value are set (throwing an error if not), or assign the default value if none is specified
+		$arguments = array ();
 		foreach ($argumentDefaults as $argument => $defaultValue) {
 			if (is_null ($defaultValue)) {
 				if (!isSet ($suppliedArguments[$argument])) {
@@ -57,6 +58,14 @@ class application
 			# Otherwise assign argument as normal
 			} else {
 				$arguments[$argument] = (isSet ($suppliedArguments[$argument]) ? $suppliedArguments[$argument] : $defaultValue);
+			}
+		}
+		
+		# Handle the errors directly if required if any arise
+		if ($handleErrors) {
+			if ($errors) {
+				echo application::showUserErrors ($errors);
+				return false;
 			}
 		}
 		
@@ -985,6 +994,20 @@ class application
 		$html .= "\n$tabs</ul>";
 		
 		# Return the result
+		return $html;
+	}
+	
+	
+	# Function to create an ordered HTML list
+	function htmlOl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false)
+	{
+		# Get the HTML as an unordered list
+		$html = application::htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false);
+		
+		# Convert to an ordered list
+		$html = str_replace (array ('<ul', '</ul>'), array ('<ol', '</ol>'), $html);
+		
+		# Return the HTML
 		return $html;
 	}
 	
