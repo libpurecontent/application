@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.29
+ * Version 1.1.30
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -387,6 +387,21 @@ class application
 				application::ksortRecursive ($array[$key]);
 			}
 		}
+	}
+	
+	
+	# Function to natsort an array by key; note that this does not accept by reference (unlike natsort)
+	function knatsort ($array)
+	{
+		$keys = array_keys ($array);
+		natsort ($keys);
+		$items = array ();
+		foreach ($keys as $key) {
+			$items[$key] = $array[$key];
+		}
+		
+		# Return the sorted list
+		return $items;
 	}
 	
 	
@@ -971,7 +986,7 @@ class application
 	
 	
 	# Function to create an unordered HTML list
-	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false)
+	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false, $selected = false)
 	{
 		# Return an empty string if no items
 		if (empty ($array)) {return '';}
@@ -981,7 +996,7 @@ class application
 		
 		# Build the list
 		$html = "\n$tabs<ul" . ($className ? " class=\"$className\"" : '') . '>';
-		foreach ($array as $item) {
+		foreach ($array as $key => $item) {
 			
 			# Skip an item if the item is empty and the flag is set to ignore these
 			if (($ignoreEmpty) && (empty ($item))) {continue;}
@@ -989,7 +1004,16 @@ class application
 			# Add the item to the HTML
 			if ($sanitise) {$item = htmlentities ($item);}
 			if ($nl2br) {$item = nl2br ($item);}
-			$html .= "\n$tabs\t<li" . ($liClass ? " class=\"{$liClass}\"" : '') . '>' . $item . '</li>';
+			
+			# Determine a class
+			$class = '';
+			if ($selected) {
+				$isCurrent = (($selected == $key) ? ' selected' : '');
+				$class = ($liClass ? " class=\"{$liClass}{$isCurrent}\"" : ($isCurrent ? ' class="selected"' : ''));
+			}
+			
+			# Assign the HTML
+			$html .= "\n$tabs\t<li" . $class . '>' . $item . '</li>';
 		}
 		$html .= "\n$tabs</ul>";
 		
