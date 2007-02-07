@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.30
+ * Version 1.1.31
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -144,18 +144,28 @@ class application
 	
 	
 	# Generalised support function to allow quick dumping of form data to screen, for debugging purposes
-	function dumpData ($data, $hide = false)
+	function dumpData ($data, $hide = false, $return = false)
 	{
+		# Start the HTML
+		$html = '';
+		
 		# Show the data
-		if ($hide) {echo "\n<!--";}
-		echo "\n" . '<pre class="debug">DEBUG: ';
+		if ($hide) {$html .= "\n<!--";}
+		$html .= "\n" . '<pre class="debug">DEBUG: ';
 		if (is_array ($data)) {
-			print_r ($data);
+			$html .= print_r ($data, true);
 		} else {
-			echo $data;
+			$html .= $data;
 		}
-		echo "\n</pre>";
-		if ($hide) {echo "\n-->";}
+		$html .= "\n</pre>";
+		if ($hide) {$html .= "\n-->";}
+		
+		# Return or show the HTML
+		if (!$return) {
+			echo $html;
+		} else {
+			return $html;
+		}
 	}
 	
 	
