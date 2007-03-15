@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.31
+ * Version 1.1.32
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -637,7 +637,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -650,7 +650,7 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$value) {continue;}
 			$headings = $value;
-			$dataHtml .= "\n\t" . '<tr>';
+			$dataHtml .= "\n\t" . '<tr' . ($addRowKeys ? ' class="' . htmlentities ($key) . '"' : '') . '>';
 			if ($showKey) {
 				$dataHtml .= "\n\t\t" . ($addCellClasses ? "<td class=\"{$key}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
@@ -1107,6 +1107,9 @@ class application
 	# Wrapper function to get CSV data
 	function getCsvData ($filename, $getHeaders = false, $assignKeys = false)
 	{
+		# Make sure the file exists
+		if (!is_readable ($filename)) {return false;}
+		
 		# Open the file
 		if (!$fileHandle = fopen ($filename, 'rb')) {return false;}
 		
