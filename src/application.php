@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.32
+ * Version 1.1.33
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -528,7 +528,7 @@ class application
 	function validEmail ($email, $domainPartOnly = false)
 	{
 		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php
-		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[_a-z0-9\$-]+(\.[_a-z0-9\$-]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
+		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[_a-z0-9\$-\+]+(\.[_a-z0-9\$-\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
 		
 		# If not an array, perform the check and return the result
 		if (!is_array ($email)) {
@@ -683,13 +683,6 @@ class application
 		
 		# Return the HTML
 		return $html;
-	}
-	
-	
-	# Compatibility function
-	function dumpDataToTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false)
-	{
-		return application::htmlTable ($array, $tableHeadingSubstitutions, $class, $showKey, $uppercaseHeadings, $allowHtml);
 	}
 	
 	
