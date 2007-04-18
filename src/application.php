@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.33
+ * Version 1.1.34
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -462,7 +462,7 @@ class application
 		# Loop through the array and convert both key and value to entity-safe characters
 		foreach ($array as $key => $value) {
 			if ($convertKeys) {$key = htmlentities ($key);}
-			$value = (is_array ($value) ? application::htmlentitiesArrayRecursive ($value) : str_replace ('È', '&Egrave;', $value));
+			$value = (is_array ($value) ? application::htmlentitiesArrayRecursive ($value) : str_replace ('', '&Egrave;', $value));
 			$cleanedArray[$key] = $value;
 		}
 		
@@ -591,7 +591,7 @@ class application
 	function validPassword ($length = 6)
 	{
 		# Check that the URL contains an activation key string of exactly 6 lowercase letters/numbers
-		return (preg_match ('/^[a-z0-9]{' . $length . '}$/', (trim ($_SERVER['QUERY_STRING']))));
+		return (preg_match ('/^[a-z0-9]{' . $length . '}$/D', (trim ($_SERVER['QUERY_STRING']))));
 	}
 	
 	
@@ -952,7 +952,7 @@ class application
 	{
 		# Split the supplied size into a number and a unit
 		$parts = array ();
-		preg_match ('/^(\d+)([bkm]*)$/i', $string, $parts);
+		preg_match ('/^(\d+)([bkm]*)$/iD', $string, $parts);
 		
 		# Convert the size to a double and the unit to lower-case
 		$size = (double) $parts[1];
