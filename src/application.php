@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.34
+ * Version 1.1.35
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -412,6 +412,36 @@ class application
 		
 		# Return the sorted list
 		return $items;
+	}
+	
+	
+	# Function to get the name of the nth key in an array (first is 1, not 0)
+	function arrayKeyName ($array, $number = 1, $multidimensional = false)
+	{
+		# Convert to multidimensional if not already
+		if (!$multidimensional) {
+			$dataset[] = $array;
+		}
+		
+		# Loop through the multidimensional array
+		foreach ($array as $index => $data) {
+			
+			# Return false if not an array
+			if (!is_array ($data)) {return $array;}
+			
+			# Ensure the number is not greater than the number of keys
+			$totalFields = count ($data);
+			if ($number > $totalFields) {return false;}
+			
+			# Loop through the data and construct
+			$i = 0;
+			foreach ($data as $key => $value) {
+				$i++;
+				if ($i == $number) {
+					return $key;
+				}
+			}
+		}
 	}
 	
 	
