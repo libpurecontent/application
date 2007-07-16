@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.35
+ * Version 1.1.36
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -353,37 +353,42 @@ class application
 	# Function to return the start,previous,next,end items in an array
 	function getPositions ($keys, $item)
 	{
+		# Reindex the keys
+		$new = array ();
+		$i = 0;
+		foreach ($keys as $key => $value) {
+			$new[$i] = $value;
+			$i++;
+		}
+		$keys = $new;
+		
 		# Ensure that the value exists in the array
 		if (!in_array ($item, $keys)) {
 			return NULL;
 		}
 		
-		# Move to the position in the array of the current item
+		# Get the index position of the current value
 		foreach ($keys as $key => $value) {
 			if ($value == $item) {
+				$index['current'] = (int) $key;
 				break;
 			}
 		}
-		if (!current ($keys)) {
-			end ($keys);
-		} else {
-			prev ($keys);
+		
+		# Assign the index positions of the other types
+		$index['previous'] = (array_key_exists (($index['current'] - 1), $keys) ? ($index['current'] - 1) : NULL);
+		$index['next'] = (array_key_exists (($index['current'] + 1), $keys) ? ($index['current'] + 1) : NULL);
+		$index['start'] = 0;
+		$index['end'] =  count ($keys) - 1;
+		
+		# Change the index with the actual value
+		$result = array ();
+		foreach ($index as $type => $position) {
+			$result[$type] = ($position !== NULL ? $keys[$position] : NULL);
 		}
 		
-		# Get the previous item in the array (then move back), resetting to the start if there is no previous
-		if (!$position['previous'] = prev ($keys)) {
-			reset ($keys);
-		} else {
-			next ($keys);
-		}
-		
-		# Assign the next item in the array (not bothering to move back) and other positions
-		$position['next'] = next ($keys);
-		$position['start'] = reset ($keys);
-		$position['end'] = end ($keys);
-		
-		# Return the position
-		return $position;
+		# Return the result
+		return $result;
 	}
 	
 	
@@ -520,6 +525,31 @@ class application
 	}
 	
 	
+	# Generic function to convert a box with URL[whitespace]description lines to a list
+	function urlReferencesBox ($string)
+	{
+		# Loop through each line
+		$lines = explode ("\n", $string);
+		foreach ($lines as $index => $line) {
+			
+			# Default to the line as-is
+			$list[$index] = $line;
+			
+			# Explode by the first space (after the first URL) if it exists
+			$parts = preg_split ("/[\s]+/", $line, 2);
+			if (count ($parts) == 2) {
+				$list[$index] = "<a href=\"{$parts[0]}\" target=\"_blank\">{$parts[1]}</a>";
+			}
+		}
+		
+		# Compile the list
+		$html  = application::htmlUl ($list);
+		
+		# Return the HTML
+		return $html;
+	}
+	
+	
 	# Function to format a minimised URL (e.g. www.site.com/subdirectory rather than http://www.site.com/subdirectory/)
 	function urlPresentational ($url)
 	{
@@ -586,10 +616,10 @@ class application
 	
 	
 	# Function to make links clickable: from www.totallyphp.co.uk/code/convert_links_into_clickable_hyperlinks.htm
-	function makeClickableLinks ($text, $addMailto = false)
+	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false)
 	{
-		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '<a target="_blank" href="\\1">\\1</a>', $text);
-		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '\\1<a target="_blank" href="http://\\2">\\2</a>', $text);
+		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
+		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '\\1<a target="_blank" href="http://\\2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\2') . '</a>', $text);
 		if ($addMailto) {$text = eregi_replace ('([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})',    '<a href="mailto:\\1">\\1</a>', $text);}
 		return $text;
 	}
@@ -728,6 +758,9 @@ class application
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
+		
+		# Ensure key substitution is an array
+		if (!$keySubstitutions) {$keySubstitutions = array ();}
 		
 		# Perform conversions
 		foreach ($array as $key => $value) {
