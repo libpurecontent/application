@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.36
+ * Version 1.1.37
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -550,6 +550,17 @@ class application
 	}
 	
 	
+	# Function to rawurlencode a path but leave the / slash characters in tact
+	function rawurlencodePath ($path)
+	{
+		# Do the encoding
+		$encoded = implode ('/', array_map ('rawurlencode', explode ('/', $path)));
+		
+		# Return the encoded path
+		return $encoded;
+	}
+	
+	
 	# Function to format a minimised URL (e.g. www.site.com/subdirectory rather than http://www.site.com/subdirectory/)
 	function urlPresentational ($url)
 	{
@@ -618,8 +629,8 @@ class application
 	# Function to make links clickable: from www.totallyphp.co.uk/code/convert_links_into_clickable_hyperlinks.htm
 	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false)
 	{
-		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
-		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=]+)', '\\1<a target="_blank" href="http://\\2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\2') . '</a>', $text);
+		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
+		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+)', '\\1<a target="_blank" href="http://\\2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\2') . '</a>', $text);
 		if ($addMailto) {$text = eregi_replace ('([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})',    '<a href="mailto:\\1">\\1</a>', $text);}
 		return $text;
 	}
@@ -730,7 +741,7 @@ class application
 			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-				$headingHtml .= "\n\t\t" . ($addCellClasses ? "<th class=\"{$columnTitle}\">" : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+				$headingHtml .= "\n\t\t" . ($addCellClasses ? "<th class=\"{$column}\">" : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
 		}
 		$headingHtml .= "\n\t" . '</tr>';
@@ -743,13 +754,6 @@ class application
 		
 		# Return the HTML
 		return $html;
-	}
-	
-	
-	# Function to create a definition list
-	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true)
-	{
-		return application::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $dlFormat = true);
 	}
 	
 	
@@ -781,14 +785,6 @@ class application
 					continue;
 				}
 			}
-			
-			# Perform substitutions
-			if (array_key_exists ($key, $keySubstitutions)) {
-				$newKeyName = $keySubstitutions[$key];
-				$array[$newKeyName] = $value;
-				unset ($array[$key]);
-				continue;
-			}
 		}
 		
 		# Return if no data
@@ -800,7 +796,7 @@ class application
 		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"$class\">";
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
-			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . $key . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . (array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
 			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . $value . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
@@ -808,6 +804,13 @@ class application
 		
 		# Return the HTML
 		return $html;
+	}
+	
+	
+	# Function to create a definition list
+	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true)
+	{
+		return application::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $dlFormat = true);
 	}
 	
 	
@@ -1072,11 +1075,12 @@ class application
 			if ($nl2br) {$item = nl2br ($item);}
 			
 			# Determine a class
-			$class = '';
-			if ($selected) {
-				$isCurrent = (($selected == $key) ? ' selected' : '');
-				$class = ($liClass ? " class=\"{$liClass}{$isCurrent}\"" : ($isCurrent ? ' class="selected"' : ''));
+			$class = array ();
+			if ($selected && ($selected == $key)) {$class[] = 'selected';}
+			if ($liClass) {
+				$class[] = ($liClass === true ? $key : $liClass);
 			}
+			$class = ($class ? ' class="' . implode (' ', $class) . '"' : '');
 			
 			# Assign the HTML
 			$html .= "\n$tabs\t<li" . $class . '>' . $item . '</li>';
