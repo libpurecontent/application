@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.37
+ * Version 1.1.38
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -132,8 +132,13 @@ class application
 		# Select the appropriate header
 		switch ($statusCode) {
 			
+			case '301':
+				header ('HTTP/1.1 301 Moved Permanently');
+				header ("Location: {$location}");
+				break;
+				
 			case '302':
-				header ("Location: $location");
+				header ("Location: {$location}");
 				break;
 				
 			case '404':
@@ -1308,6 +1313,32 @@ class application
 		
 		# Return the list
 		return $finalised;
+	}
+	
+	
+	# Function to enable pagination - based on www.phpnoise.com/tutorials/9/1
+	function getPagerData ($items, $limit, $page)
+	{
+		# Take the number of items
+		$items = (int) $items;
+		
+		# Ensure the limit is at least 1
+		$limit = max ((int) $limit, 1);
+		
+		# Ensure the page is at least 1
+		$page = max ((int) $page, 1);
+		
+		# Get the total number of pages (items divided by the number of pages, rounded up to catch the last (potentially incomplete) page)
+		$totalPages = ceil ($items / $limit);
+		
+		# Ensure the page is no more than the number of pages
+		$page = min ($page, $totalPages);
+		
+		# Define the offset, taking page 1 (rather than 0) as the first page
+		$offset = ($page - 1) * $limit;
+		
+		# Return the result
+		return array ($totalPages, $offset, $items, $limit, $page);
 	}
 }
 
