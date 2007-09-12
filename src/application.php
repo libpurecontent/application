@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.38
+ * Version 1.1.39
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -802,7 +802,7 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
 			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . (array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
-			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . $value . ($dlFormat ? '</dd>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlentities ($value)) : $value) . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
 		$html .= "\n" . ($dlFormat ? '</dl>' : '</table>');
@@ -1045,6 +1045,10 @@ class application
 	# Function to regroup a data set into separate groups
 	function regroup ($data, $regroupByColumn, $removeGroupColumn = true)
 	{
+		# Return the data unmodified if not an array or empty
+		if (!is_array ($data) || empty ($data)) {return $data;}
+		
+		# Rearrange the data
 		$rearrangedData = array ();
 		foreach ($data as $key => $values) {
 			$grouping = $values[$regroupByColumn];
@@ -1063,7 +1067,7 @@ class application
 	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false, $selected = false)
 	{
 		# Return an empty string if no items
-		if (empty ($array)) {return '';}
+		if (!is_array ($array) || empty ($array)) {return '';}
 		
 		# Prepare the tab string
 		$tabs = str_repeat ("\t", ($parentTabLevel));
