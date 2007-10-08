@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.39
+ * Version 1.1.40
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -143,6 +143,10 @@ class application
 				
 			case '404':
 				header ('HTTP/1.0 404 Not Found');
+				break;
+				
+			case '410':
+				header ('HTTP/1.0 410 Gone');
 				break;
 		}
 	}
@@ -740,16 +744,18 @@ class application
 		}
 		
 		# Construct the heading HTML
-		$headingHtml  = "\n\t" . '<tr>';
-		if ($showKey) {$headingHtml .= "\n\t\t" . "<th></th>";}
+		$headingHtml  = '';
 		if ($tableHeadingSubstitutions !== false) {
+			$headingHtml .= "\n\t" . '<tr>';
+			if ($showKey) {$headingHtml .= "\n\t\t" ."<th></th>";}
 			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
 				$headingHtml .= "\n\t\t" . ($addCellClasses ? "<th class=\"{$column}\">" : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
+			$headingHtml .= "\n\t" . '</tr>';
 		}
-		$headingHtml .= "\n\t" . '</tr>';
+		
 		
 		# Construct the overall heading
 		$html  = "\n\n" . "<table class=\"$class\">";
