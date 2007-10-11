@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-6
- * Version 1.1.40
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
+ * Version 1.1.41
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -624,6 +624,29 @@ class application
 			}
 		}
 		return $allValidEmail;
+	}
+	
+	
+	# Function to provide a mail quoting algorithm
+	function emailQuoting ($message, $quoteString = '> ')
+	{
+		# Start an array of lines to hold the quoted message
+		$quotedMessage = array ();
+		
+		# Wordwrap the message
+		$message = wordwrap ($message, (75 - strlen ($quoteString) - 1));
+		
+		# Explode the message and add quote marks
+		$lines = explode ("\n", $message);
+		foreach ($lines as $line) {
+			$quotedMessage[] = $quoteString . $line;
+		}
+		
+		# Reassemble the message
+		$quotedMessage = implode ("\n", $quotedMessage);
+		
+		# Return the quoted message
+		return $quotedMessage;
 	}
 	
 	
@@ -1349,6 +1372,34 @@ class application
 		
 		# Return the result
 		return array ($totalPages, $offset, $items, $limit, $page);
+	}
+	
+	
+	# Function to create a URL slug
+	#!# Solution based on www.thinkingphp.org/2006/10/19/title-to-url-slug-conversion/ ; consider instead using something more like Wordpress' sanitize_title, as here: http://trac.wordpress.org/browser/trunk/wp-includes/functions-formatting.php?rev=1481
+	function createUrlSlug ($string)
+	{
+		# Trim the string
+		$string = trim ($string);
+		
+		# Lower-case the string
+		$string = strtolower ($string);
+		
+		# Define the main conversions
+		$unPretty = array ('/ä/', '/ö/', '/ü/', '/Ä/', '/Ö/', '/Ü/', '/ß/', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
+		$pretty   = array ('ae', 'oe', 'ue', 'Ae', 'Oe', 'Ue', 'ss', '-', '-', '-', '-', '-', '', '', '', '');
+		$string = preg_replace ($unPretty, $pretty, $string);
+		
+		# Convert any remaining characters
+		$string = preg_replace ('|[^a-z0-9-]|', '-', $string);
+		
+		# Replace double-hyphens
+		while (substr_count ($string, '--')) {
+			$string = str_replace ('--', '-', $string);
+		}
+		
+		# Convert
+		return $string;
 	}
 }
 
