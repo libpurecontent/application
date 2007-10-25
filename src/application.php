@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.41
+ * Version 1.1.42
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -605,6 +605,7 @@ class application
 	
 	
 	# Function to check that an e-mail address (or all addresses) are valid
+	#!# Consider a more advanced solution like www.linuxjournal.com/article/9585 which is more RFC-compliant
 	function validEmail ($email, $domainPartOnly = false)
 	{
 		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php
@@ -753,7 +754,7 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$value) {continue;}
 			$headings = $value;
-			$dataHtml .= "\n\t" . '<tr' . ($addRowKeys ? ' class="' . htmlentities ($key) . '"' : '') . '>';
+			$dataHtml .= "\n\t" . '<tr' . ($addRowKeys ? ' class="' . htmlentities ($key, ENT_COMPAT, 'UTF-8') . '"' : '') . '>';
 			if ($showKey) {
 				$dataHtml .= "\n\t\t" . ($addCellClasses ? "<td class=\"{$key}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
@@ -761,7 +762,7 @@ class application
 			foreach ($value as $valueKey => $valueData) {
 				$i++;
 				$data = $array[$key][$valueKey];
-				$dataHtml .= "\n\t\t" . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$dataHtml .= "\n\t\t" . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data, ENT_COMPAT, 'UTF-8') : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= "\n\t" . '</tr>';
 		}
@@ -831,7 +832,7 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
 			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . (array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
-			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlentities ($value)) : $value) . ($dlFormat ? '</dd>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlentities ($value, ENT_COMPAT, 'UTF-8')) : $value) . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
 		$html .= "\n" . ($dlFormat ? '</dl>' : '</table>');
