@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.42
+ * Version 1.1.43
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -357,6 +357,35 @@ class application
 		return $longestLength;
 	}
 	*/
+	
+	
+	# String highlighting, based on http://aidanlister.com/repos/v/function.str_highlight.php
+	function str_highlight ($text, $needle, $forceWordBoundaryIfNo = false)
+	{
+		# Default highlighting
+		$highlight = '<strong>\1</strong>';
+		
+		# Pattern
+		$pattern = '#(%s)#';
+		
+		# Apply case insensitivity
+		$pattern .= 'i';
+		
+		# Escape characters
+		$needle = preg_quote ($needle);
+		
+		# Escape needle with whole word check
+		if (!$forceWordBoundaryIfNo || ($forceWordBoundaryIfNo && !substr_count ($needle, $forceWordBoundaryIfNo))) {
+			$needle = '\b' . $needle . '\b';
+		}
+		
+		# Perform replacement
+		$regex = sprintf ($pattern, $needle);
+		$text = preg_replace ($regex, $highlight, $text);
+		
+		# Return the text
+		return $text;
+	}
 	
 	
 	# Function to return the start,previous,next,end items in an array
@@ -1399,7 +1428,10 @@ class application
 			$string = str_replace ('--', '-', $string);
 		}
 		
-		# Convert
+		# Remove hyphens from the start or end
+		$string = ereg_replace ('(^-|-$)', '', $string);
+		
+		# Return the value
 		return $string;
 	}
 }
