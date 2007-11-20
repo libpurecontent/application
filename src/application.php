@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.44
+ * Version 1.1.45
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1070,7 +1070,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false, $onlyFields = array ())
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1089,6 +1089,7 @@ class application
 			}
 			$i = 0;
 			foreach ($value as $valueKey => $valueData) {
+				if ($onlyFields && !in_array ($valueKey, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$i++;
 				$data = $array[$key][$valueKey];
 				$dataHtml .= "\n\t\t" . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data, ENT_COMPAT, 'UTF-8') : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
@@ -1103,6 +1104,7 @@ class application
 			if ($showKey) {$headingHtml .= "\n\t\t" ."<th></th>";}
 			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
+				if ($onlyFields && !in_array ($column, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
 				$headingHtml .= "\n\t\t" . ($addCellClasses ? "<th class=\"{$column}\">" : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
@@ -1716,7 +1718,7 @@ class application
 		$string = strtolower ($string);
 		
 		# Define the main conversions
-		$unPretty = array ('/ä/', '/ö/', '/ü/', '/Ä/', '/Ö/', '/Ü/', '/ß/', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
+		$unPretty = array ('//', '//', '//', '//', '//', '//', '//', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
 		$pretty   = array ('ae', 'oe', 'ue', 'Ae', 'Oe', 'Ue', 'ss', '-', '-', '-', '-', '-', '', '', '', '');
 		$string = preg_replace ($unPretty, $pretty, $string);
 		
