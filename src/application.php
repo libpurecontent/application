@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.45
+ * Version 1.1.46
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -455,6 +455,31 @@ class application
 		
 		# Return the sorted list
 		return $items;
+	}
+	
+	
+	# Function to trim all values in an array; recursive values are also handled
+	function arrayTrim ($array, $trimKeys = false)
+	{
+		# Return the value if not an array
+		if (!is_array ($array)) {return $array;}
+		
+		# Loop and replace
+		$cleanedArray = array ();
+		foreach ($array as $key => $value) {
+			
+			# Deal with recursive arrays
+			if (is_array ($value)) {$value = application::arrayTrim ($value);}
+			
+			# Trim the key if requested
+			if ($trimKeys) {$key = trim ($key);}
+			
+			# Trim value
+			$cleanedArray[$key] = trim ($value);
+		}
+		
+		# Return the new array
+		return $cleanedArray;
 	}
 	
 	
@@ -1718,7 +1743,7 @@ class application
 		$string = strtolower ($string);
 		
 		# Define the main conversions
-		$unPretty = array ('//', '//', '//', '//', '//', '//', '//', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
+		$unPretty = array ('/ä/', '/ö/', '/ü/', '/Ä/', '/Ö/', '/Ü/', '/ß/', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
 		$pretty   = array ('ae', 'oe', 'ue', 'Ae', 'Oe', 'Ue', 'ss', '-', '-', '-', '-', '-', '', '', '', '');
 		$string = preg_replace ($unPretty, $pretty, $string);
 		
