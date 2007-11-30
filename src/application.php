@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.46
+ * Version 1.1.47
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1205,9 +1205,28 @@ class application
 	}
 	
 	
-	# Function to write data to a file (first creating it if it does not exist); returns true if successful or false if there was a problem
-	function writeDataToFile ($data, $file)
+	# Function to convert Unicode to ISO; see http://www.php.net/manual/en/function.mb-convert-encoding.php#78033
+	function unicodeToIso ($string)
 	{
+		# Return the result
+		return mb_convert_encoding ($string, 'ISO-8859-1', mb_detect_encoding ($string, 'UTF-8, ISO-8859-1, ISO-8859-15', true));
+	}
+	
+	
+	# Function to write data to a file (first creating it if it does not exist); returns true if successful or false if there was a problem
+	function writeDataToFile ($data, $file, $unicodeToIso = true)
+	{
+		# Down-conversion from Unicode to (Excel-readable) ISO
+		if ($unicodeToIso) {
+			$data = application::unicodeToIso ($data);
+		}
+		
+		# Use file_put_contents if using PHP5
+		$isPhp5 = version_compare (PHP_VERSION, '5', '>=');
+		if ($isPhp5) {
+			return file_put_contents ($file, $data, FILE_APPEND);
+		}
+		
 		# Attempt to open the file in read+write mode (in binary-safe mode, as recommended by the PHP developers) the actual results to it
 		if (!$fileHandle = fopen ($file, 'a+b')) {
 			return false;
