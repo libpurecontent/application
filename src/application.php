@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.47
+ * Version 1.1.48
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -539,13 +539,13 @@ class application
 		#!# Convert to using htmlentitiesArrayRecursive
 		if (!is_array ($record)) {
 			$record = strtr ($record, $convertFrom, $convertTo);
-			if ($htmlEntitiesConversion) {$record = htmlentities ($record);}
+			if ($htmlEntitiesConversion) {$record = htmlentities ($record, ENT_COMPAT, 'UTF-8');}
 		} else {
 			
 			# If an array, clean each item
 			foreach ($record as $name => $details) {
 				$record[$name] = strtr ($details, $convertFrom, $convertTo);
-				if ($htmlEntitiesConversion) {$record[$name] = htmlentities ($record[$name]);}
+				if ($htmlEntitiesConversion) {$record[$name] = htmlentities ($record[$name], ENT_COMPAT, 'UTF-8');}
 			}
 		}
 		
@@ -559,7 +559,7 @@ class application
 	{
 		# Loop through the array and convert both key and value to entity-safe characters
 		foreach ($array as $key => $value) {
-			if ($convertKeys) {$key = htmlentities ($key);}
+			if ($convertKeys) {$key = htmlentities ($key, ENT_COMPAT, 'UTF-8');}
 			$value = (is_array ($value) ? application::htmlentitiesArrayRecursive ($value) : str_replace ('', '&Egrave;', $value));
 			$cleanedArray[$key] = $value;
 		}
@@ -570,11 +570,10 @@ class application
 	
 	
 	# Unicode, numeric entity conversion, basically a hack because PHP doesn't support UTF8 in get_html_translation_table(); from http://uk3.php.net/manual/en/function.htmlentities.php#54927 and http://uk2.php.net/manual/en/function.get-html-translation-table.php#76564, http://radekhulan.cz/item/php-script-to-convert-x-html-entities-to-decimal-unicode-representation/category/apache-php
-	#!# Move to application.php
 	function htmlentitiesNumericUnicode ($input)
 	{
-		$input = htmlentities ($input, ENT_QUOTES, 'UTF-8');
-		$htmlEntities = array_values (get_html_translation_table (HTML_ENTITIES, ENT_QUOTES));
+		$input = htmlentities ($input, ENT_COMPAT, 'UTF-8');
+		$htmlEntities = array_values (get_html_translation_table (HTML_ENTITIES, ENT_COMPAT));
 		$htmlEntities[chr(130)] = '&sbquo;';    // Single Low-9 Quotation Mark
 		$htmlEntities[chr(131)] = '&fnof;';    // Latin Small Letter F With Hook
 		$htmlEntities[chr(132)] = '&bdquo;';    // Double Low-9 Quotation Mark
@@ -599,7 +598,7 @@ class application
 		$htmlEntities[chr(155)] = '&rsaquo;';    // Single Right-Pointing Angle Quotation Mark
 		$htmlEntities[chr(156)] = '&oelig;';    // Latin Small Ligature OE
 		$htmlEntities[chr(159)] = '&Yuml;';    // Latin Capital Letter Y With Diaeresis
-		$entitiesDecoded = array_keys   (get_html_translation_table (HTML_ENTITIES, ENT_QUOTES));
+		$entitiesDecoded = array_keys (get_html_translation_table (HTML_ENTITIES, ENT_COMPAT));
 		$num = count ($entitiesDecoded);
 		for ($u = 0; $u < $num; $u++) {
 			$utf8Entities[$u] = '&#'.ord($entitiesDecoded[$u]).';';
@@ -1208,6 +1207,9 @@ class application
 	# Function to convert Unicode to ISO; see http://www.php.net/manual/en/function.mb-convert-encoding.php#78033
 	function unicodeToIso ($string)
 	{
+		# Return the string without alteration if the multibyte extension is not present
+		if (!function_exists ('mb_convert_encoding')) {return $string;}
+		
 		# Return the result
 		return mb_convert_encoding ($string, 'ISO-8859-1', mb_detect_encoding ($string, 'UTF-8, ISO-8859-1, ISO-8859-15', true));
 	}
@@ -1485,7 +1487,7 @@ class application
 			if (($ignoreEmpty) && (empty ($item))) {continue;}
 			
 			# Add the item to the HTML
-			if ($sanitise) {$item = htmlentities ($item);}
+			if ($sanitise) {$item = htmlentities ($item, ENT_COMPAT, 'UTF-8');}
 			if ($nl2br) {$item = nl2br ($item);}
 			
 			# Determine a class
@@ -1535,7 +1537,7 @@ class application
 			$last = $lastOnly && is_array ($contents) && (empty ($contents));
 			$queryText = ($last ? '' : ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':')) . str_replace (' ', '+', strtolower ($name));
 			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$this->baseUrl}/category/{$queryText}\">" : '');
-			$html .= "\n\t{$tabs}<li>{$link}" . htmlentities ($name) . ($link ? '</a>' : '');
+			$html .= "\n\t{$tabs}<li>{$link}" . htmlentities ($name, ENT_COMPAT, 'UTF-8') . ($link ? '</a>' : '');
 			if (is_array ($contents) && (!empty ($contents))) {
 				$html .= application::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), $lastOnly, $lowercaseLinks, ($level + 1));
 			}
