@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.48
+ * Version 1.1.49
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -121,8 +121,14 @@ class application
 	# Function to get the base URL (non-slash terminated)
 	function getBaseUrl ()
 	{
+		# Obtain the value
+		$baseUrl = dirname (ereg_replace ("^{$_SERVER['DOCUMENT_ROOT']}", '', $_SERVER['SCRIPT_FILENAME']));
+		
+		# Deal with the special case of an application at top-level
+		if ($baseUrl == '/') {$baseUrl = '';}
+		
 		# Return the value
-		return dirname (ereg_replace ("^{$_SERVER['DOCUMENT_ROOT']}", '', $_SERVER['SCRIPT_FILENAME']));
+		return $baseUrl;
 	}
 	
 	
@@ -1013,6 +1019,7 @@ class application
 	
 	
 	# Function to make links clickable: from www.totallyphp.co.uk/code/convert_links_into_clickable_hyperlinks.htm
+	#!# Need to disallow characters such as ;.) at end of links
 	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false)
 	{
 		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
@@ -1094,7 +1101,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false, $onlyFields = array ())
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false, $onlyFields = array (), $compress = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1109,16 +1116,16 @@ class application
 			$headings = $value;
 			$dataHtml .= "\n\t" . '<tr' . ($addRowKeys ? ' class="' . htmlentities ($key, ENT_COMPAT, 'UTF-8') . '"' : '') . '>';
 			if ($showKey) {
-				$dataHtml .= "\n\t\t" . ($addCellClasses ? "<td class=\"{$key}\">" : '<td>') . "<strong>{$key}</strong></td>";
+				$dataHtml .= ($compress ? '' : "\n\t\t") . ($addCellClasses ? "<td class=\"{$key}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
 			$i = 0;
 			foreach ($value as $valueKey => $valueData) {
 				if ($onlyFields && !in_array ($valueKey, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$i++;
 				$data = $array[$key][$valueKey];
-				$dataHtml .= "\n\t\t" . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data, ENT_COMPAT, 'UTF-8') : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$dataHtml .= ($compress ? '' : "\n\t\t") . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data, ENT_COMPAT, 'UTF-8') : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
-			$dataHtml .= "\n\t" . '</tr>';
+			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
 		}
 		
 		# Construct the heading HTML
