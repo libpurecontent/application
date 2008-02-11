@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.50
+ * Version 1.1.51
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -607,18 +607,77 @@ class application
 	}
 	
 	
-	# Recursive function to do htmlentities conversion through a tree
-	function htmlentitiesArrayRecursive ($array, $convertKeys = true)
+	# Function to deal with character/entity processing
+	function safetext ($string, $outputCharset = 'UTF-8')
 	{
+		# Pre-5.2.5 this is the most consistent handling; however, it may not be secure, e.g. if UTF-7 is injected; see: www.shiflett.org/blog/2005/dec/google-xss-example
+		if (version_compare (phpversion (), '5.2.5', '<')) {
+			return htmlentities ($string, ENT_COMPAT, $outputCharset);
+		}
+		
+		# If not outputting UTF-8, clean with entities
+		if ($outputCharset != 'UTF-8') {
+			return $string = htmlentities ($string, ENT_COMPAT, $outputCharset);
+		}
+		
+		# Otherwise return specialchars only, which is what UTF-8 is suited to
+		return htmlspecialchars ($string, ENT_COMPAT, $outputCharset);
+	}
+	
+	
+	# Function to convert the character set, mainly intended for ISO-8859-1 to UTF-8 conversions, with string/array/multi-dimensional-array (including array key conversion) support
+	function convertToCharset ($variable, $outputCharset = 'UTF-8', $convertKeys = true)
+	{
+		# If the value is a scalar, convert directly and return
+		if (!is_array ($variable)) {
+			return application::convertToCharset_scalar ($variable, $outputCharset);
+		}
+		
 		# Loop through the array and convert both key and value to entity-safe characters
-		foreach ($array as $key => $value) {
-			if ($convertKeys) {$key = htmlentities ($key, ENT_COMPAT, 'UTF-8');}
-			$value = (is_array ($value) ? application::htmlentitiesArrayRecursive ($value) : str_replace ('', '&Egrave;', $value));
+		$cleanedArray = array ();
+		foreach ($variable as $key => $value) {
+			if ($convertKeys) {$key = application::convertToCharset ($key, $outputCharset);}
+			$value = application::convertToCharset ($value);
 			$cleanedArray[$key] = $value;
 		}
 		
 		# Return the cleaned array
 		return $cleanedArray;
+	}
+	
+	
+	
+	# Function wrapped by convertToCharset
+	/* private */ function convertToCharset_scalar ($string, $outputCharset = 'UTF-8', $iconvIgnore = true)
+	{
+		# Detect the input encoding, using mb_ extension by preference if it is available
+		if (function_exists ('mb_detect_encoding')) {
+			$inputCharset = mb_detect_encoding ($string , 'UTF-8, ISO-8859-1, ISO-8859-15');	// Note UTF-8 must precede others
+		} else {
+			
+			# If the mb_ extension is not available, check for UTF-8 and assume ISO-8859-1 otherwise; see http://www.w3.org/International/questions/qa-forms-utf-8.en.php
+			$isUtf8 = preg_match ('%^(?:
+				  [\x09\x0A\x0D\x20-\x7E]            # ASCII
+				| [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
+				|  \xE0[\xA0-\xBF][\x80-\xBF]        # excluding overlongs
+				| [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}  # straight 3-byte
+				|  \xED[\x80-\x9F][\x80-\xBF]        # excluding surrogates
+				|  \xF0[\x90-\xBF][\x80-\xBF]{2}     # planes 1-3
+				| [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
+				|  \xF4[\x80-\x8F][\x80-\xBF]{2}     # plane 16
+			)*$%xs', $string);
+			$inputCharset = ($isUtf8 ? 'UTF-8' : 'ISO-8859-1');
+		}
+		
+		# Perform no conversion if the input and output character sets match
+		if ($inputCharset == $outputCharset) {return $string;}
+		
+		# Convert the string; not sure why this works but see www.php.net/function.iconv#59030
+		if ($iconvIgnore) {$outputCharset .= '//IGNORE';}
+		$string = iconv (NULL, $outputCharset, $string);
+		
+		# Return the string
+		return $string;
 	}
 	
 	
@@ -637,7 +696,7 @@ class application
 		$htmlEntities[chr(137)] = '&permil;';    // Per Mille Sign
 		$htmlEntities[chr(138)] = '&Scaron;';    // Latin Capital Letter S With Caron
 		$htmlEntities[chr(139)] = '&lsaquo;';    // Single Left-Pointing Angle Quotation Mark
-		$htmlEntities[chr(140)] = '&OElig;    ';    // Latin Capital Ligature OE
+		$htmlEntities[chr(140)] = '&OElig;';    // Latin Capital Ligature OE
 		$htmlEntities[chr(145)] = '&lsquo;';    // Left Single Quotation Mark
 		$htmlEntities[chr(146)] = '&rsquo;';    // Right Single Quotation Mark
 		$htmlEntities[chr(147)] = '&ldquo;';    // Left Double Quotation Mark
