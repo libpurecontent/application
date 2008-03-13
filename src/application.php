@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.1.51
+ * Version 1.2.0
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -582,23 +582,22 @@ class application
 	
 	
 	# Function to clean up text
-	function cleanText ($record, $htmlEntitiesConversion = true)
+	function cleanText ($record, $entityConversion = true)
 	{
 		# Define conversions
 		$convertFrom = "\x82\x83\x84\x85\x86\x87\x89\x8a\x8b\x8c\x8e\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f";
 		$convertTo = "'f\".**^\xa6<\xbc\xb4''\"\"---~ \xa8>\xbd\xb8\xbe";
 		
 		# If not an array, clean the item
-		#!# Convert to using htmlentitiesArrayRecursive
 		if (!is_array ($record)) {
 			$record = strtr ($record, $convertFrom, $convertTo);
-			if ($htmlEntitiesConversion) {$record = htmlentities ($record, ENT_COMPAT, 'UTF-8');}
+			if ($entityConversion) {$record = htmlspecialchars ($record);}
 		} else {
 			
 			# If an array, clean each item
 			foreach ($record as $name => $details) {
 				$record[$name] = strtr ($details, $convertFrom, $convertTo);
-				if ($htmlEntitiesConversion) {$record[$name] = htmlentities ($record[$name], ENT_COMPAT, 'UTF-8');}
+				if ($entityConversion) {$record[$name] = htmlspecialchars ($record[$name]);}
 			}
 		}
 		
@@ -621,7 +620,7 @@ class application
 		}
 		
 		# Otherwise return specialchars only, which is what UTF-8 is suited to
-		return htmlspecialchars ($string, ENT_COMPAT, $outputCharset);
+		return htmlspecialchars ($string);
 	}
 	
 	
@@ -682,42 +681,43 @@ class application
 	
 	
 	# Unicode, numeric entity conversion, basically a hack because PHP doesn't support UTF8 in get_html_translation_table(); from http://uk3.php.net/manual/en/function.htmlentities.php#54927 and http://uk2.php.net/manual/en/function.get-html-translation-table.php#76564, http://radekhulan.cz/item/php-script-to-convert-x-html-entities-to-decimal-unicode-representation/category/apache-php
+	#!# Determine whether this is needed any longer
 	function htmlentitiesNumericUnicode ($input)
 	{
 		$input = htmlentities ($input, ENT_COMPAT, 'UTF-8');
-		$htmlEntities = array_values (get_html_translation_table (HTML_ENTITIES, ENT_COMPAT));
-		$htmlEntities[chr(130)] = '&sbquo;';    // Single Low-9 Quotation Mark
-		$htmlEntities[chr(131)] = '&fnof;';    // Latin Small Letter F With Hook
-		$htmlEntities[chr(132)] = '&bdquo;';    // Double Low-9 Quotation Mark
-		$htmlEntities[chr(133)] = '&hellip;';    // Horizontal Ellipsis
-		$htmlEntities[chr(134)] = '&dagger;';    // Dagger
-		$htmlEntities[chr(135)] = '&Dagger;';    // Double Dagger
-		$htmlEntities[chr(136)] = '&circ;';    // Modifier Letter Circumflex Accent
-		$htmlEntities[chr(137)] = '&permil;';    // Per Mille Sign
-		$htmlEntities[chr(138)] = '&Scaron;';    // Latin Capital Letter S With Caron
-		$htmlEntities[chr(139)] = '&lsaquo;';    // Single Left-Pointing Angle Quotation Mark
-		$htmlEntities[chr(140)] = '&OElig;';    // Latin Capital Ligature OE
-		$htmlEntities[chr(145)] = '&lsquo;';    // Left Single Quotation Mark
-		$htmlEntities[chr(146)] = '&rsquo;';    // Right Single Quotation Mark
-		$htmlEntities[chr(147)] = '&ldquo;';    // Left Double Quotation Mark
-		$htmlEntities[chr(148)] = '&rdquo;';    // Right Double Quotation Mark
-		$htmlEntities[chr(149)] = '&bull;';    // Bullet
-		$htmlEntities[chr(150)] = '&ndash;';    // En Dash
-		$htmlEntities[chr(151)] = '&mdash;';    // Em Dash
-		$htmlEntities[chr(152)] = '&tilde;';    // Small Tilde
-		$htmlEntities[chr(153)] = '&trade;';    // Trade Mark Sign
-		$htmlEntities[chr(154)] = '&scaron;';    // Latin Small Letter S With Caron
-		$htmlEntities[chr(155)] = '&rsaquo;';    // Single Right-Pointing Angle Quotation Mark
-		$htmlEntities[chr(156)] = '&oelig;';    // Latin Small Ligature OE
-		$htmlEntities[chr(159)] = '&Yuml;';    // Latin Capital Letter Y With Diaeresis
+		$entities = array_values (get_html_translation_table (HTML_ENTITIES, ENT_COMPAT));
+		$entities[chr(130)] = '&sbquo;';    // Single Low-9 Quotation Mark
+		$entities[chr(131)] = '&fnof;';    // Latin Small Letter F With Hook
+		$entities[chr(132)] = '&bdquo;';    // Double Low-9 Quotation Mark
+		$entities[chr(133)] = '&hellip;';    // Horizontal Ellipsis
+		$entities[chr(134)] = '&dagger;';    // Dagger
+		$entities[chr(135)] = '&Dagger;';    // Double Dagger
+		$entities[chr(136)] = '&circ;';    // Modifier Letter Circumflex Accent
+		$entities[chr(137)] = '&permil;';    // Per Mille Sign
+		$entities[chr(138)] = '&Scaron;';    // Latin Capital Letter S With Caron
+		$entities[chr(139)] = '&lsaquo;';    // Single Left-Pointing Angle Quotation Mark
+		$entities[chr(140)] = '&OElig;';    // Latin Capital Ligature OE
+		$entities[chr(145)] = '&lsquo;';    // Left Single Quotation Mark
+		$entities[chr(146)] = '&rsquo;';    // Right Single Quotation Mark
+		$entities[chr(147)] = '&ldquo;';    // Left Double Quotation Mark
+		$entities[chr(148)] = '&rdquo;';    // Right Double Quotation Mark
+		$entities[chr(149)] = '&bull;';    // Bullet
+		$entities[chr(150)] = '&ndash;';    // En Dash
+		$entities[chr(151)] = '&mdash;';    // Em Dash
+		$entities[chr(152)] = '&tilde;';    // Small Tilde
+		$entities[chr(153)] = '&trade;';    // Trade Mark Sign
+		$entities[chr(154)] = '&scaron;';    // Latin Small Letter S With Caron
+		$entities[chr(155)] = '&rsaquo;';    // Single Right-Pointing Angle Quotation Mark
+		$entities[chr(156)] = '&oelig;';    // Latin Small Ligature OE
+		$entities[chr(159)] = '&Yuml;';    // Latin Capital Letter Y With Diaeresis
 		$entitiesDecoded = array_keys (get_html_translation_table (HTML_ENTITIES, ENT_COMPAT));
 		$num = count ($entitiesDecoded);
 		for ($u = 0; $u < $num; $u++) {
 			$utf8Entities[$u] = '&#'.ord($entitiesDecoded[$u]).';';
 		}
-		$input = str_replace ($htmlEntities, $utf8Entities, $input);
+		$input = str_replace ($entities, $utf8Entities, $input);
 		
-		$entity_to_decimal = array(
+		$entity_to_decimal = array (
 			'&nbsp;' => '&#160;',
 			'&iexcl;' => '&#161;',
 			'&cent;' => '&#162;',
@@ -1207,7 +1207,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false, $onlyFields = array (), $compress = false)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $showKey = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeys = false, $onlyFields = array (), $compress = false, $showHeadings = true)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1220,7 +1220,7 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$value) {continue;}
 			$headings = $value;
-			$dataHtml .= "\n\t" . '<tr' . ($addRowKeys ? ' class="' . htmlentities ($key, ENT_COMPAT, 'UTF-8') . '"' : '') . '>';
+			$dataHtml .= "\n\t" . '<tr' . ($addRowKeys ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';
 			if ($showKey) {
 				$dataHtml .= ($compress ? '' : "\n\t\t") . ($addCellClasses ? "<td class=\"{$key}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
@@ -1229,7 +1229,7 @@ class application
 				if ($onlyFields && !in_array ($valueKey, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$i++;
 				$data = $array[$key][$valueKey];
-				$dataHtml .= ($compress ? '' : "\n\t\t") . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlentities ($data, ENT_COMPAT, 'UTF-8') : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$dataHtml .= ($compress ? '' : "\n\t\t") . ($i == 1 ? ($addCellClasses ? "<td class=\"{$valueKey} key\">" : '<td class="key">') : ($addCellClasses ? "<td class=\"{$valueKey}\">" : '<td>')) . application::encodeEmailAddress (!$allowHtml ? htmlspecialchars ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
 		}
@@ -1251,7 +1251,7 @@ class application
 		
 		# Construct the overall heading
 		$html  = "\n\n" . "<table class=\"$class\">";
-		$html .= $headingHtml;
+		if ($showHeadings) {$html .= $headingHtml;}
 		$html .= $dataHtml;
 		$html .= "\n" . '</table>';
 		
@@ -1279,7 +1279,7 @@ class application
 			}
 			
 			# Omit empty or substitute for a string (as required) if there is no value
-			if ($omitEmpty && !$value) {
+			if ($omitEmpty && $value == '') {	// == '' is used because $value of 0 would otherwise be empty
 				if (is_string ($omitEmpty)) {
 					$array[$key] = $omitEmpty;
 					$value = $omitEmpty;
@@ -1300,7 +1300,7 @@ class application
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
 			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . (array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
-			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlentities ($value, ENT_COMPAT, 'UTF-8')) : $value) . ($dlFormat ? '</dd>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlspecialchars ($value)) : $value) . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
 		$html .= "\n" . ($dlFormat ? '</dl>' : '</table>');
@@ -1600,7 +1600,7 @@ class application
 			if (($ignoreEmpty) && (empty ($item))) {continue;}
 			
 			# Add the item to the HTML
-			if ($sanitise) {$item = htmlentities ($item, ENT_COMPAT, 'UTF-8');}
+			if ($sanitise) {$item = htmlspecialchars ($item);}
 			if ($nl2br) {$item = nl2br ($item);}
 			
 			# Determine a class
@@ -1650,7 +1650,7 @@ class application
 			$last = $lastOnly && is_array ($contents) && (empty ($contents));
 			$queryText = ($last ? '' : ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':')) . str_replace (' ', '+', strtolower ($name));
 			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$this->baseUrl}/category/{$queryText}\">" : '');
-			$html .= "\n\t{$tabs}<li>{$link}" . htmlentities ($name, ENT_COMPAT, 'UTF-8') . ($link ? '</a>' : '');
+			$html .= "\n\t{$tabs}<li>{$link}" . htmlspecialchars ($name) . ($link ? '</a>' : '');
 			if (is_array ($contents) && (!empty ($contents))) {
 				$html .= application::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), $lastOnly, $lowercaseLinks, ($level + 1));
 			}
@@ -1877,7 +1877,7 @@ class application
 		$string = strtolower ($string);
 		
 		# Define the main conversions
-		$unPretty = array ('/ä/', '/ö/', '/ü/', '/Ä/', '/Ö/', '/Ü/', '/ß/', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
+		$unPretty = array ('//', '//', '//', '//', '//', '//', '//', '/\s?-\s?/', '/\s?_\s?/', '/\s?\/\s?/', '/\s?\\\s?/', '/\s/', '/"/', '/\'/', '/!/', '/\./');
 		$pretty   = array ('ae', 'oe', 'ue', 'Ae', 'Oe', 'Ue', 'ss', '-', '-', '-', '-', '-', '', '', '', '');
 		$string = preg_replace ($unPretty, $pretty, $string);
 		
