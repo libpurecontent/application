@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.0
+ * Version 1.2.1
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -649,6 +649,9 @@ class application
 	# Function wrapped by convertToCharset
 	/* private */ function convertToCharset_scalar ($string, $outputCharset = 'UTF-8', $iconvIgnore = true)
 	{
+		# End if iconv support is not available
+		if (!function_exists ('iconv')) {return $string;}
+		
 		# Detect the input encoding, using mb_ extension by preference if it is available
 		if (function_exists ('mb_detect_encoding')) {
 			$inputCharset = mb_detect_encoding ($string , 'UTF-8, ISO-8859-1, ISO-8859-15');	// Note UTF-8 must precede others
@@ -1329,36 +1332,22 @@ class application
 	
 	
 	# Function to write data to a file (first creating it if it does not exist); returns true if successful or false if there was a problem
-	function writeDataToFile ($data, $file, $unicodeToIso = true)
+	function writeDataToFile ($data, $file, $unicodeToIso = false, $unicodeAddBom = false)
 	{
 		# Down-conversion from Unicode to (Excel-readable) ISO
 		if ($unicodeToIso) {
 			$data = application::unicodeToIso ($data);
 		}
 		
-		# Use file_put_contents if using PHP5
-		$isPhp5 = version_compare (PHP_VERSION, '5', '>=');
-		if ($isPhp5) {
-			return file_put_contents ($file, $data, FILE_APPEND);
-		}
-		
-		# Attempt to open the file in read+write mode (in binary-safe mode, as recommended by the PHP developers) the actual results to it
-		if (!$fileHandle = fopen ($file, 'a+b')) {
-			return false;
-		} else {
-			
-			# Attempt to write the data
-			#!# For some reason this returns false just after the first time trying to create the file
-			if (!fwrite ($fileHandle, $data)) {
-				fclose ($fileHandle);
-				return false;
-			} else {
-				
-				# Close the successfully-written-to file and return a positive result
-				fclose ($fileHandle);
-				return true;
+		# Add the Unicode Byte Order Mark if required to a new file; useful to ensure that Excel understands the CSV as UTF-8
+		if ($unicodeAddBom && !$unicodeToIso) {
+			if (!file_exists ($file)) {
+				$data = "\xEF\xBB\xBF" . $data;
 			}
 		}
+		
+		# Use file_put_contents if using PHP5
+		return file_put_contents ($file, $data, FILE_APPEND);
 	}
 	
 	
