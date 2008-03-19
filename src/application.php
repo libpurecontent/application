@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.1
+ * Version 1.2.2
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -533,6 +533,28 @@ class application
 		
 		# Return the new array
 		return $cleanedArray;
+	}
+	
+	
+	# Function to return only the specified fields of an existing array
+	function arrayFields ($array, $fields)
+	{
+		# Return unamended if not an array
+		if (!is_array ($array)) {return $array;}
+		
+		# Ensure the fields are an array
+		$fields = application::ensureArray ($fields);
+		
+		# Loop through the array and extract only the wanted fields
+		$filteredArray = array ();
+		foreach ($array as $key => $value) {
+			if (in_array ($key, $fields)) {
+				$filteredArray[$key] = $value;
+			}
+		}
+		
+		# Return the filtered array
+		return $filteredArray;
 	}
 	
 	
@@ -1069,6 +1091,30 @@ class application
 		
 		# Send the message
 		mail ($administratorEmail, $subject, wordwrap ($message), $mailheaders);
+	}
+	
+	
+	# Function to e-mail changes between two arrays
+	function mailChanges ($administratorEmail, $before, $after, $databaseReference, $emailSubject)
+	{
+		# End if no changes
+		if (!$changes = array_diff ($before, $after)) {return;}
+		
+		# Report changes to the administrator for info
+		$changedFields = array_keys ($changes);
+		$beforeChanged = application::arrayFields ($before, $changedFields);
+		$afterChanged = application::arrayFields ($after, $changedFields);
+		
+		# Construct the e-mail message
+		$message  = "\nUser {$this->user} has amended {$databaseReference}, with the following fields being changed:";
+		$message .= "\n\n\nBefore:";
+		$message .= "\n\n" . print_r ($beforeChanged, true);
+		$message .= "\n\n\nAfter:";
+		$message .= "\n\n" . print_r ($afterChanged, true);
+		
+		# Send the e-mail
+		$mailheaders = 'From: ' . __CLASS__ . ' <' . $administratorEmail . '>';
+		mail ($administratorEmail, $emailSubject, wordwrap ($message), $mailheaders);
 	}
 	
 	
