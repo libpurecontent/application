@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.3
+ * Version 1.2.4
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1099,10 +1099,9 @@ class application
 	function mailChanges ($administratorEmail, $before, $after, $databaseReference, $emailSubject)
 	{
 		# End if no changes
-		if (!$changes = array_diff ($before, $after)) {return;}
+		if (!$changedFields = application::array_changed_values_fields ($before, $after)) {return;}
 		
 		# Report changes to the administrator for info
-		$changedFields = array_keys ($changes);
 		$beforeChanged = application::arrayFields ($before, $changedFields);
 		$afterChanged = application::arrayFields ($after, $changedFields);
 		
@@ -1116,6 +1115,33 @@ class application
 		# Send the e-mail
 		$mailheaders = 'From: ' . __CLASS__ . ' <' . $administratorEmail . '>';
 		mail ($administratorEmail, $emailSubject, wordwrap ($message), $mailheaders);
+	}
+	
+	
+	# Function to get a list of fields that have changed values (this is not the same as array_diff - see comments on www.php.net/array_diff page)
+	function array_changed_values_fields ($array1, $array2)
+	{
+		# Start an array of changed field names whose value has changed
+		$changedFields = array ();
+		
+		# Find the differences from array1 to array2, avoiding offsets caused by missing fields
+		foreach ($array1 as $key => $value) {
+			if (!array_key_exists ($key, $array2)) {continue;}
+			if ($array1[$key] != $array2[$key]) {
+				$changedFields[$key] = $key;
+			}
+		}
+		
+		# Find the differences from array2 to array1, avoiding offsets caused by missing fields
+		foreach ($array2 as $key => $value) {
+			if (!array_key_exists ($key, $array1)) {continue;}
+			if ($array2[$key] != $array1[$key]) {
+				$changedFields[$key] = $key;
+			}
+		}
+		
+		# Return the changed field names
+		return $changedFields;
 	}
 	
 	
