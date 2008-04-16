@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.4
+ * Version 1.2.5
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1758,7 +1758,7 @@ class application
 	
 	#!# Not finished - needs file handling
 	# Wrapper function to get CSV data
-	function getCsvData ($filename, $getHeaders = false, $assignKeys = false)
+	function getCsvData ($filename, $getHeaders = false, $assignKeys = false, $keyAsFirstRow = false)
 	{
 		# Make sure the file exists
 		if (!is_readable ($filename)) {return false;}
@@ -1778,7 +1778,7 @@ class application
 			
 			# Check the first item exists and set it as the row key then unset it
 			if ($firstRowCell = $csvData[0]) {
-				if (!$assignKeys) {unset ($csvData[0]);}
+				if (!$keyAsFirstRow) {unset ($csvData[0]);}
 				
 				# Determine the key name to use
 				$rowKey = ($assignKeys ? $assignedKey++ : $firstRowCell);
