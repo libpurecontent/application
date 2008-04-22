@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.6
+ * Version 1.2.7
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -35,7 +35,7 @@ class application
 			if (is_null ($defaultValue)) {
 				if (!isSet ($suppliedArguments[$argument])) {
 					$errors['absent' . ucfirst ($functionName) . ucfirst ($argument)] = "No '<strong>$argument</strong>' has been set in the '<strong>$functionName</strong>' specification.";
-					$arguments[$argument] = $functionName;
+					$arguments[$argument] = $defaultValue;
 				} else {
 					$arguments[$argument] = $suppliedArguments[$argument];
 				}
@@ -1204,8 +1204,8 @@ class application
 	#!# Need to disallow characters such as ;.) at end of links
 	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false)
 	{
-		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=;]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
-		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=;]+)', '\\1<a target="_blank" href="http://\\2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\2') . '</a>', $text);
+		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
+		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)', '\\1<a target="_blank" href="http://\\2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\2') . '</a>', $text);
 		if ($addMailto) {$text = eregi_replace ('([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})',    '<a href="mailto:\\1">\\1</a>', $text);}
 		return $text;
 	}
@@ -1463,12 +1463,18 @@ class application
 	
 	
 	# Function to check whether an area is writable; provides facilities additional to is_writable
-	function directoryIsWritable ($root, $location = '/')
+	function directoryIsWritable ($location, $root = '/')
 	{
 		# If there is a trailing slash, remove it
 		if (substr ($location, -1) == '/') {$location = substr ($location, 0, -1);}
 		
-		# Split the directories up
+		# If not starting with a slash or a dot, prepend the location
+		if ((substr ($location, 0, 1) != '/') && (substr ($location, 0, 1) != '.')) {
+			$location = dirname ($_SERVER['SCRIPT_FILENAME']) . '/' . $location;
+		}
+		
+		# Split the directories up, removing the opening slash
+		if (substr ($location, 0, 1) == '/') {$location = substr ($location, 1);}
 		$directories = explode ('/', $location);
 		
 		# Loop through the directories in the list
