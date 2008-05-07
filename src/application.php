@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.7
+ * Version 1.2.8
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1096,6 +1096,7 @@ class application
 	
 	
 	# Function to e-mail changes between two arrays
+	#!# __CLASS__ needs to be configurable
 	function mailChanges ($administratorEmail, $before, $after, $databaseReference, $emailSubject)
 	{
 		# End if no changes
@@ -1462,7 +1463,7 @@ class application
 	}
 	
 	
-	# Function to check whether an area is writable; provides facilities additional to is_writable
+	# Function to check whether an area is writable; provides facilities additional to is_writable; works by moving back from the proposed location until it finds a folder and then checks if that is writable
 	function directoryIsWritable ($location, $root = '/')
 	{
 		# If there is a trailing slash, remove it
@@ -1478,16 +1479,14 @@ class application
 		$directories = explode ('/', $location);
 		
 		# Loop through the directories in the list
-		while (count ($directories)) {
+		while ($directories) {
 			
 			# Re-compile the location
 			$directory = $root . implode ('/', $directories);
 			
 			# If the directory exists, test for its writability; this will get called at least once because the root location will get tested at some point
 			if (is_dir ($directory)) {
-				if (!is_writable ($directory)) {
-					return false;
-				}
+				return (is_writable ($directory));
 			}
 			
 			# Remove the last directory in the list
