@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.9
+ * Version 1.2.10
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -139,6 +139,12 @@ class application
 		switch ($statusCode) {
 			
 			case '301':
+				header ('HTTP/1.1 301 Moved Permanently');
+				header ("Location: {$location}");
+				break;
+				
+			case 'refresh':
+				$location = $_SERVER['_PAGE_URL'];
 				header ('HTTP/1.1 301 Moved Permanently');
 				header ("Location: {$location}");
 				break;
