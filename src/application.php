@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.10
+ * Version 1.2.11
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -123,6 +123,9 @@ class application
 	{
 		# Obtain the value
 		$baseUrl = dirname (ereg_replace ("^{$_SERVER['DOCUMENT_ROOT']}", '', $_SERVER['SCRIPT_FILENAME']));
+		
+		# Convert backslashes to forwarded slashes if necessary
+		$baseUrl = str_replace ('\\', '/', $baseUrl);
 		
 		# Deal with the special case of an application at top-level
 		if ($baseUrl == '/') {$baseUrl = '';}
