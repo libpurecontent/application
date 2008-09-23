@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.11
+ * Version 1.2.12
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -168,7 +168,7 @@ class application
 	
 	
 	# Generalised support function to allow quick dumping of form data to screen, for debugging purposes
-	function dumpData ($data, $hide = false, $return = false)
+	function dumpData ($data, $hide = false, $return = false, $htmlspecialchars = true)
 	{
 		# Start the HTML
 		$html = '';
@@ -177,10 +177,10 @@ class application
 		if ($hide) {$html .= "\n<!--";}
 		$html .= "\n" . '<pre class="debug">DEBUG: ';
 		if (is_array ($data)) {
-			$html .= print_r ($data, true);
-		} else {
-			$html .= $data;
+			$data = print_r ($data, true);
 		}
+		if ($htmlspecialchars) {$data = htmlspecialchars ($data);}
+		$html .= $data;
 		$html .= "\n</pre>";
 		if ($hide) {$html .= "\n-->";}
 		
@@ -520,6 +520,33 @@ class application
 	}
 	
 	
+	# Function to perform resorting with a start list
+	function resortStartOrder ($list, $startOrder)
+	{
+		# Return what is supplied if the list is not an array
+		if (!is_array ($list) || empty ($list)) {return $list;}
+		
+		# Start an array of items
+		$resortedList = array ();
+		
+		# Add each item in the list, ordered by the start order
+		foreach ($startOrder as $item) {
+			if (isSet ($list[$item])) {
+				$resortedList[$item] = $list[$item];
+				unset ($list[$item]);
+			}
+		}
+		
+		# Add on the remainder not in the start order list
+		if (!empty ($list)) {
+			$resortedList += $list;
+		}
+		
+		# Return the newly sorted list
+		return $resortedList;
+	}
+	
+	
 	# Function to trim all values in an array; recursive values are also handled
 	function arrayTrim ($array, $trimKeys = false)
 	{
@@ -689,6 +716,7 @@ class application
 		} else {
 			
 			# If the mb_ extension is not available, check for UTF-8 and assume ISO-8859-1 otherwise; see http://www.w3.org/International/questions/qa-forms-utf-8.en.php
+			#!# Note http://bugs.php.net/45546 - which indicates a segfault-creating bug
 			$isUtf8 = preg_match ('%^(?:
 				  [\x09\x0A\x0D\x20-\x7E]            # ASCII
 				| [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
@@ -1003,7 +1031,7 @@ class application
 		# Assemble the data cells
 		$dataHtml = '';
 		foreach ($array as $key => $value) {
-			if (!$value) {continue;}
+			if (!$value || !is_array ($value)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not a multi-dimensional array.</p>';}
 			$headings = $value;
 			$dataHtml .= "\n\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';
 			if ($keyAsFirstRow) {
@@ -1060,19 +1088,21 @@ class application
 		foreach ($array as $key => $value) {
 			
 			# Skip keys in the array
-			if ($keySubstitutions && array_key_exists ($key, $keySubstitutions) && $keySubstitutions[$key] === NULL) {
+			if ($keySubstitutions && is_array ($keySubstitutions) && array_key_exists ($key, $keySubstitutions) && $keySubstitutions[$key] === NULL) {
 				unset ($array[$key]);
 				continue;
 			}
 			
 			# Omit empty or substitute for a string (as required) if there is no value
-			if ($omitEmpty && $value === '') {	// == '' is used because $value of 0 would otherwise be empty
-				if (is_string ($omitEmpty)) {
-					$array[$key] = $omitEmpty;
-					$value = $omitEmpty;
-				} else {
-					unset ($array[$key]);
-					continue;
+			if ($omitEmpty) {
+				if (($value === '') || ($value === false) || (is_null ($value))) {	// == '' is used because $value of 0 would otherwise be empty
+					if (is_string ($omitEmpty)) {
+						$array[$key] = $omitEmpty;
+						$value = $omitEmpty;
+					} else {
+						unset ($array[$key]);
+						continue;
+					}
 				}
 			}
 		}
@@ -1086,7 +1116,7 @@ class application
 		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"$class\">";
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
-			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . (array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
+			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . ($keySubstitutions && is_array ($keySubstitutions) && array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
 			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlspecialchars ($value)) : $value) . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
