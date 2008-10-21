@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.12
+ * Version 1.2.13
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -583,14 +583,36 @@ class application
 		
 		# Loop through the array and extract only the wanted fields
 		$filteredArray = array ();
-		foreach ($array as $key => $value) {
-			if (in_array ($key, $fields)) {
-				$filteredArray[$key] = $value;
+		foreach ($fields as $field) {
+			if (array_key_exists ($field, $array)) {
+				$filteredArray[$field] = $array[$field];
 			}
 		}
 		
 		# Return the filtered array
 		return $filteredArray;
+	}
+	
+	
+	# Function to filter an array by a list of keys
+	function array_filter_keys ($array, $keys)
+	{
+		# Return unamended if not an array
+		if (!is_array ($array)) {return $array;}
+		
+		# Ensure the keys list is an array
+		$keys = application::ensureArray ($keys);
+		
+		# Add those values of the $array whose key is in $keys
+		$result = array ();
+		foreach ($array as $key => $value) {
+			if (in_array ($key, $keys)) {
+				$result[$key] = $value;
+			}
+		}
+		
+		# Return the resulting array
+		return $result;
 	}
 	
 	
