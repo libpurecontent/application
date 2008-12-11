@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.13
+ * Version 1.2.14
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -738,17 +738,11 @@ class application
 		} else {
 			
 			# If the mb_ extension is not available, check for UTF-8 and assume ISO-8859-1 otherwise; see http://www.w3.org/International/questions/qa-forms-utf-8.en.php
-			#!# Note http://bugs.php.net/45546 - which indicates a segfault-creating bug
-			$isUtf8 = preg_match ('%^(?:
-				  [\x09\x0A\x0D\x20-\x7E]            # ASCII
-				| [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
-				|  \xE0[\xA0-\xBF][\x80-\xBF]        # excluding overlongs
-				| [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}  # straight 3-byte
-				|  \xED[\x80-\x9F][\x80-\xBF]        # excluding surrogates
-				|  \xF0[\x90-\xBF][\x80-\xBF]{2}     # planes 1-3
-				| [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
-				|  \xF4[\x80-\x8F][\x80-\xBF]{2}     # plane 16
-			)*$%xs', $string);
+			if (strlen ($string) != 0) {
+				$isUtf8 = true;
+			} else {
+				$isUtf8 = (preg_match ('/^.{1}/us', $string) == 1);	// See 'function utf8_compliant' on http://www.phpwact.org/php/i18n/charsets
+			}
 			$inputCharset = ($isUtf8 ? 'UTF-8' : 'ISO-8859-1');
 		}
 		
