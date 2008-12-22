@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.14
+ * Version 1.2.15
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1036,7 +1036,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $keyAsFirstRow = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeyClasses = false, $onlyFields = array (), $compress = false, $showHeadings = true)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $keyAsFirstColumn = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeyClasses = false, $onlyFields = array (), $compress = false, $showHeadings = true)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1050,8 +1050,8 @@ class application
 			if (!$value || !is_array ($value)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not a multi-dimensional array.</p>';}
 			$headings = $value;
 			$dataHtml .= "\n\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';
-			if ($keyAsFirstRow) {
-				$thisCellClass = ($addCellClasses ? htmlspecialchars ($key) : '') . ($keyAsFirstRow ? ($addCellClasses ? ' ' : '') . 'key' : '');
+			if ($keyAsFirstColumn) {
+				$thisCellClass = ($addCellClasses ? htmlspecialchars ($key) : '') . ($keyAsFirstColumn ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
 			$i = 0;
@@ -1059,7 +1059,7 @@ class application
 				if ($onlyFields && !in_array ($valueKey, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$i++;
 				$data = $array[$key][$valueKey];
-				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) : '') . ((($i == 1) && !$keyAsFirstRow) ? ($addCellClasses ? ' ' : '') . 'key' : '');
+				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlspecialchars ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
@@ -1069,7 +1069,7 @@ class application
 		$headingHtml  = '';
 		if ($tableHeadingSubstitutions !== false) {
 			$headingHtml .= "\n\t" . '<tr>';
-			if ($keyAsFirstRow) {$headingHtml .= "\n\t\t" . '<th></th>';}
+			if ($keyAsFirstColumn) {$headingHtml .= "\n\t\t" . '<th></th>';}
 			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
 				if ($onlyFields && !in_array ($column, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
