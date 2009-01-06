@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.15
+ * Version 1.2.16
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1030,6 +1030,9 @@ class application
 		}
 		$title = str_replace ($closingTag, '', $title);
 		
+		# Un-decode entities
+		$title = htmlspecialchars_decode ($title);
+		
 		# Send the title back as the result
 		return $title;
 	}
@@ -1488,30 +1491,247 @@ class application
 	}
 	
 	
-	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions
+	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions, with the extension checked case insensitively
 	function filenameIsValid ($name, $disallowedExtensions = array (), $allowedExtensions = array ())
 	{
-		# Check whether it's a disallowed extension
-		foreach ($disallowedExtensions as $disallowedExtension) {
-			if (eregi ($disallowedExtension . '$', $name)) {
+		# Determine the extension of the file
+		$extension = pathinfo ($name, PATHINFO_EXTENSION);
+		
+		# Check for a disallowed extension
+		if ($disallowedExtensions) {
+			if (self::iin_array ($extension, $disallowedExtensions)) {
 				return false;
 			}
 		}
 		
 		# Check whether it's an allowed extension if a list has been supplied
-		if (!empty ($allowedExtensions)) {
-			foreach ($allowedExtensions as $allowedExtension) {
-				if (eregi ($allowedExtension . '$', $name)) {
-					return true;
-				}
-			}
-			
-			# Otherwise return false if not found
-			return false;
+		if ($allowedExtensions) {
+			return (self::iin_array ($extension, $allowedExtensions));
 		}
 		
 		# Otherwise pass
 		return true;
+	}
+	
+	
+	# Function to help with mimeType/extension lookups
+	function mimeTypeExtensions ()
+	{
+		# Define the MIME Types; list taken from www.mimetype.org
+		$mimeTypes = '
+		application/SLA	stl
+		application/STEP	step
+		application/STEP	stp
+		application/acad	dwg
+		application/andrew-inset	ez
+		application/clariscad	ccad
+		application/drafting	drw
+		application/dsptype	tsp
+		application/dxf	dxf
+		application/excel	xls
+		application/i-deas	unv
+		application/java-archive	jar
+		application/mac-binhex40	hqx
+		application/mac-compactpro	cpt
+		application/vnd.ms-powerpoint	pot
+		application/vnd.ms-powerpoint	pps
+		application/vnd.ms-powerpoint	ppt
+		application/vnd.ms-powerpoint	ppz
+		application/msword	doc
+		application/octet-stream	bin
+		application/octet-stream	class
+		application/octet-stream	dms
+		application/octet-stream	exe
+		application/octet-stream	lha
+		application/octet-stream	lzh
+		application/oda	oda
+		application/ogg	ogg
+		application/ogg	ogm
+		application/pdf	pdf
+		application/pgp	pgp
+		application/postscript	ai
+		application/postscript	eps
+		application/postscript	ps
+		application/pro_eng	prt
+		application/rtf	rtf
+		application/set	set
+		application/smil	smi
+		application/smil	smil
+		application/solids	sol
+		application/vda	vda
+		application/vnd.mif	mif
+		application/vnd.ms-excel	xlc
+		application/vnd.ms-excel	xll
+		application/vnd.ms-excel	xlm
+		application/vnd.ms-excel	xls
+		application/vnd.ms-excel	xlw
+		application/vnd.rim.cod	cod
+		application/x-arj-compressed	arj
+		application/x-bcpio	bcpio
+		application/x-cdlink	vcd
+		application/x-chess-pgn	pgn
+		application/x-cpio	cpio
+		application/x-csh	csh
+		application/x-debian-package	deb
+		application/x-director	dcr
+		application/x-director	dir
+		application/x-director	dxr
+		application/x-dvi	dvi
+		application/x-freelance	pre
+		application/x-futuresplash	spl
+		application/x-gtar	gtar
+		application/x-gunzip	gz
+		application/x-gzip	gz
+		application/x-hdf	hdf
+		application/x-ipix	ipx
+		application/x-ipscript	ips
+		application/x-javascript	js
+		application/x-koan	skd
+		application/x-koan	skm
+		application/x-koan	skp
+		application/x-koan	skt
+		application/x-latex	latex
+		application/x-lisp	lsp
+		application/x-lotusscreencam	scm
+		application/x-mif	mif
+		application/x-msdos-program	bat
+		application/x-msdos-program	com
+		application/x-msdos-program	exe
+		application/x-netcdf	cdf
+		application/x-netcdf	nc
+		application/x-perl	pl
+		application/x-perl	pm
+		application/x-rar-compressed	rar
+		application/x-sh	sh
+		application/x-shar	shar
+		application/x-shockwave-flash	swf
+		application/x-stuffit	sit
+		application/x-sv4cpio	sv4cpio
+		application/x-sv4crc	sv4crc
+		application/x-tar-gz	tar.gz
+		application/x-tar-gz	tgz
+		application/x-tar	tar
+		application/x-tcl	tcl
+		application/x-tex	tex
+		application/x-texinfo	texi
+		application/x-texinfo	texinfo
+		application/x-troff-man	man
+		application/x-troff-me	me
+		application/x-troff-ms	ms
+		application/x-troff	roff
+		application/x-troff	t
+		application/x-troff	tr
+		application/x-ustar	ustar
+		application/x-wais-source	src
+		application/x-zip-compressed	zip
+		application/zip	zip
+		audio/TSP-audio	tsi
+		audio/basic	au
+		audio/basic	snd
+		audio/midi	kar
+		audio/midi	mid
+		audio/midi	midi
+		audio/mpeg	mp2
+		audio/mpeg	mp3
+		audio/mpeg	mpga
+		audio/ulaw	au
+		audio/x-aiff	aif
+		audio/x-aiff	aifc
+		audio/x-aiff	aiff
+		audio/x-mpegurl	m3u
+		audio/x-ms-wax	wax
+		audio/x-ms-wma	wma
+		audio/x-pn-realaudio-plugin	rpm
+		audio/x-pn-realaudio	ram
+		audio/x-pn-realaudio	rm
+		audio/x-realaudio	ra
+		audio/x-wav	wav
+		chemical/x-pdb	pdb
+		chemical/x-pdb	xyz
+		image/cmu-raster	ras
+		image/gif	gif
+		image/ief	ief
+		image/jpeg	jpe
+		image/jpeg	jpeg
+		image/jpeg	jpg
+		image/png	png
+		image/tiff	tif tiff
+		image/tiff	tif
+		image/tiff	tiff
+		image/x-cmu-raster	ras
+		image/x-portable-anymap	pnm
+		image/x-portable-bitmap	pbm
+		image/x-portable-graymap	pgm
+		image/x-portable-pixmap	ppm
+		image/x-rgb	rgb
+		image/x-xbitmap	xbm
+		image/x-xpixmap	xpm
+		image/x-xwindowdump	xwd
+		model/iges	iges
+		model/iges	igs
+		model/mesh	mesh
+		model/mesh	msh
+		model/mesh	silo
+		model/vrml	vrml
+		model/vrml	wrl
+		text/css	css
+		text/html	htm
+		text/html	html htm
+		text/html	html
+		text/plain	asc txt
+		text/plain	asc
+		text/plain	c
+		text/plain	cc
+		text/plain	f90
+		text/plain	f
+		text/plain	h
+		text/plain	hh
+		text/plain	m
+		text/plain	txt
+		text/richtext	rtx
+		text/rtf	rtf
+		text/sgml	sgm
+		text/sgml	sgml
+		text/tab-separated-values	tsv
+		text/vnd.sun.j2me.app-descriptor	jad
+		text/x-setext	etx
+		text/xml	xml// This is disabled because XML has several different MIME Types
+		video/dl	dl
+		video/fli	fli
+		video/flv	flv
+		video/gl	gl
+		video/mpeg	mp2
+		video/mpeg	mpe
+		video/mpeg	mpeg
+		video/mpeg	mpg
+		video/quicktime	mov
+		video/quicktime	qt
+		video/vnd.vivo	viv
+		video/vnd.vivo	vivo
+		video/x-fli	fli
+		video/x-ms-asf	asf
+		video/x-ms-asx	asx
+		video/x-ms-wmv	wmv
+		video/x-ms-wmx	wmx
+		video/x-ms-wvx	wvx
+		video/x-msvideo	avi
+		video/x-sgi-movie	movie
+		www/mime	mime
+		x-conference/x-cooltalk	ice
+		x-world/x-vrml	vrm
+		x-world/x-vrml	vrml';
+		
+		# Parse the list as array ($extension => $mimeType, ... )
+		$list = array ();
+		$mimeTypes = explode ("\n", trim ($mimeTypes));
+		foreach ($mimeTypes as $index => $line) {
+			list ($mimeType, $extension) = explode ("\t", trim ($line), 2);
+			if (substr_count ($extension, ' ')) {continue;}	// Limit of 2 for some extensions in the source listing have two listed, e.g. "asc txt"
+			$list[$extension] = $mimeType;
+		}
+		
+		# Return the list
+		return $list;
 	}
 	
 	
@@ -1899,6 +2119,9 @@ class application
 			$string = str_replace ('--', '-', $string);
 		}
 		
+		# Convert -s- (resulting from "'s ") to s-
+		$string = str_replace ('-s-', 's-', $string);
+		
 		# Remove hyphens from the start or end
 		$string = ereg_replace ('(^-|-$)', '', $string);
 		
@@ -1908,24 +2131,65 @@ class application
 }
 
 
-# Ensure that the file_put_contents function exists - taken from http://cvs.php.net/co.php/pear/PHP_Compat/Compat/Function/file_put_contents.php?r=1.9
+
+# Ensure that the file_put_contents function exists - taken from http://cvs.php.net/viewvc.cgi/pear/PHP_Compat/Compat/Function/file_put_contents.php?revision=1.9&view=markup
 if (!function_exists('file_put_contents'))
 {
-    function file_put_contents ($filename, $content)
+	function file_put_contents ($filename, $content)
+	{
+	    $bytes = 0;
+	
+	    if (($file = fopen($filename, 'w+')) === false) {
+	        return false;
+	    }
+	
+	    if (($bytes = fwrite($file, $content)) === false) {
+	        return false;
+	    }
+	
+	    fclose($file);
+	
+	    return $bytes;
+	}
+}
+
+
+# Define an emulated mime_content_type function (if not using Windows) - taken from http://cvs.php.net/viewvc.cgi/pear/PHP_Compat/Compat/Function/mime_content_type.php?revision=1.6&view=markup
+if (!function_exists ('mime_content_type') && (!strstr (PHP_OS, 'WIN')))
+{
+	function mime_content_type ($filename)
+	{
+	    // Sanity check
+	    if (!file_exists($filename)) {
+	        return false;
+	    }
+	
+	    $filename = escapeshellarg($filename);
+	    $out = `file -iL $filename 2>/dev/null`;
+	    if (empty($out)) {
+	        return 'application/octet-stream';
+	    }
+	
+	    // Strip off filename
+	    $t = substr($out, strpos($out, ':') + 2);
+	
+	    if (strpos($t, ';') !== false) {
+	        // Strip MIME parameters
+	        $t = substr($t, 0, strpos($t, ';'));
+	    }
+	
+	    // Strip any remaining whitespace
+	    return trim($t);
+	}
+}
+
+
+# Emulation of htmlspecialchars_decode; from http://uk.php.net/manual/en/function.htmlspecialchars-decode.php#68962
+if ( !function_exists('htmlspecialchars_decode') )
+{
+    function htmlspecialchars_decode($text)
     {
-        $bytes = 0;
-
-        if (($file = fopen($filename, 'w+')) === false) {
-            return false;
-        }
-
-        if (($bytes = fwrite($file, $content)) === false) {
-            return false;
-        }
-
-        fclose($file);
-
-        return $bytes;
+        return strtr($text, array_flip(get_html_translation_table(HTML_SPECIALCHARS)));
     }
 }
 
