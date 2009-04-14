@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.18
+ * Version 1.2.19
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -256,14 +256,16 @@ class application
 		# Return false if not an array
 		if (!is_array ($array)) {return false;}
 		
-		# Loop through each and return true if any non-integer keys are found
+		# Loop through each and check each key
+		$index = 0;
 		foreach ($array as $key => $value) {
-			if (!is_int ($key)) {
-				return true;
-			}
+			
+			# If the key does not exactly match the index (i.e. is not numeric type or is not in pure order of 0, 1, 2, ...), then it is associative
+			if ($key !== $index) {return true;}
+			$index++;
 		}
 		
-		# Otherwise return false as all keys are numeric
+		# Otherwise return false as all keys are integers in natural order
 		return false;
 	}
 	
@@ -612,6 +614,15 @@ class application
 		}
 		
 		# Return the resulting array
+		return $result;
+	}
+	
+	
+	# Function to return the duplicate values in an array
+	function array_duplicate_values ($array)
+	{
+		$checkKeysUniqueComparison = create_function ('$value', 'if ($value > 1) return true;');
+		$result = array_keys (array_filter (array_count_values ($array), $checkKeysUniqueComparison));
 		return $result;
 	}
 	
