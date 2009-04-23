@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.19
+ * Version 1.2.21
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -122,7 +122,7 @@ class application
 	function getBaseUrl ()
 	{
 		# Obtain the value
-		$baseUrl = dirname (ereg_replace ("^{$_SERVER['DOCUMENT_ROOT']}", '', $_SERVER['SCRIPT_FILENAME']));
+		$baseUrl = dirname (substr ($_SERVER['SCRIPT_FILENAME'], strlen ($_SERVER['DOCUMENT_ROOT'])));
 		
 		# Convert backslashes to forwarded slashes if necessary
 		$baseUrl = str_replace ('\\', '/', $baseUrl);
@@ -222,6 +222,7 @@ class application
 		
 		# Return false if a non-empty value is found
 		foreach ($array as $key => $value) {
+			#!# Consider changing to casting as string then doing a strlen
 			if ($value !== '') {	// Native empty() regards 0 and '0' as empty which is stupid
 				return false;
 			}
@@ -1074,6 +1075,7 @@ class application
 				$i++;
 				$data = $array[$key][$valueKey];
 				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
+				#!# encodeEmailAddress should be optional
 				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlspecialchars ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
@@ -1527,11 +1529,11 @@ class application
 	}
 	
 	
-	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions, with the extension checked case insensitively
+	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions, with the extension checked case insensitively; both the checked filename and the allowed/disallowed extensions must start with a .
 	function filenameIsValid ($name, $disallowedExtensions = array (), $allowedExtensions = array ())
 	{
 		# Determine the extension of the file
-		$extension = pathinfo ($name, PATHINFO_EXTENSION);
+		$extension = '.' . pathinfo ($name, PATHINFO_EXTENSION);
 		
 		# Check for a disallowed extension
 		if ($disallowedExtensions) {
@@ -2228,5 +2230,6 @@ if ( !function_exists('htmlspecialchars_decode') )
         return strtr($text, array_flip(get_html_translation_table(HTML_SPECIALCHARS)));
     }
 }
+
 
 ?>
