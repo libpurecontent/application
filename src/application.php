@@ -2232,4 +2232,14 @@ if ( !function_exists('htmlspecialchars_decode') )
 }
 
 
+# Emulation of mb_strtolower for UTF-8 compliance; based on http://www.php.net/strtolower#90871
+if (!function_exists ('mb_strtolower'))
+{
+	function mb_strtolower ($string, $encoding)
+	{
+		return utf8_encode (strtolower (utf8_decode ($string)));
+	}
+}
+
+
 ?>
