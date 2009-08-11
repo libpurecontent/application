@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.21
+ * Version 1.2.22
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -774,6 +774,9 @@ class application
 	# Function to format free text
 	function formatTextBlock ($text, $paragraphClass = NULL)
 	{
+		# Do nothing if the text is empty
+		if (!strlen ($text)) {return $text;}
+		
 		# Remove any windows line breaks
 		$text = str_replace ("\r\n", "\n", $text);
 		
