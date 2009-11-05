@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.2.22
+ * Version 1.3.0
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -922,13 +922,13 @@ class application
 		
 		# If not an array, perform the check and return the result
 		if (!is_array ($email)) {
-			return eregi ($regexp, $email);
+			return preg_match ('/' . $regexp . '/i', $email);
 		}
 		
 		# If an array, check each and return the flag
 		$allValidEmail = true;
 		foreach ($email as $value) {
-			if (!eregi ($regexp, $value)) {
+			if (!preg_match ('/' . $regexp . '/i', $value)) {
 				$allValidEmail = false;
 				break;
 			}
@@ -972,9 +972,10 @@ class application
 	#!# Need to disallow characters such as ;.) at end of links
 	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false)
 	{
-		$text = eregi_replace ('(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)', '<a target="_blank" href="\\1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\1') . '</a>', $text);
-		$text = eregi_replace ('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)', '\\1<a target="_blank" href="http://\\2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '\\2') . '</a>', $text);
-		if ($addMailto) {$text = eregi_replace ('([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})',    '<a href="mailto:\\1">\\1</a>', $text);}
+		$delimiter = '!';
+		$text = preg_replace ($delimiter . '(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '<a target="_blank" href="$1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$1') . '</a>', $text);
+		$text = preg_replace ($delimiter . '([\s()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '$1<a target="_blank" href="http://$2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$2') . '</a>', $text);
+		if ($addMailto) {$text = preg_replace ($delimiter . '([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})' . "{$delimiter}i", '<a href="mailto:$1">$1</a>', $text);}
 		return $text;
 	}
 	
@@ -1014,7 +1015,7 @@ class application
 	function urlSyntacticallyValid ($url)
 	{
 		# Return true if the URL is valid following basic checks
-		return eregi ('^(ftp|http|https)', $url);
+		return preg_match ('/^(ftp|http|https)/i', $url);
 	}
 	
 	
@@ -1022,7 +1023,7 @@ class application
 	function urlIsInternal ($url)
 	{
 		# Return true if the full URL starts with the site URL
-		return eregi ('^' . $_SERVER['_SITE_URL'], $url);
+		return preg_match ('/^' . addcslashes ($_SERVER['_SITE_URL'], '/') . '/i', $url);
 	}
 	
 	
@@ -1030,17 +1031,17 @@ class application
 	function getTitleFromFileContents ($contents, $startingCharacters = 100, $tag = 'h1')
 	{
 		# Define the starting and closing tags
-		$startingTag = "<$tag";
-		$closingTag = "</$tag>";
+		$startingTag = "<{$tag}";
+		$closingTag = "</{$tag}>";
 		
 		# Search through the contents case-insensitively
 		$html = stristr ($contents, $startingTag);
 		
 		# Extract what is between the $startingTag and the $closingTag
 		$title = '';
-		$result = eregi ("($startingTag.+$closingTag)", $html, $temporary);
+		$result = preg_match ("~({$startingTag}.+{$closingTag})~i", $html, $temporary);
 		if ($result) {
-			eregi ("([^>]*$closingTag)", $temporary[0], $out);
+			preg_match ("~([^>]*{$closingTag})~i", $temporary[0], $out);
 			$title = trim ($out[0]); 
 		}
 		$title = str_replace ($closingTag, '', $title);
@@ -2164,10 +2165,36 @@ class application
 		$string = str_replace ('-s-', 's-', $string);
 		
 		# Remove hyphens from the start or end
-		$string = ereg_replace ('(^-|-$)', '', $string);
+		$string = preg_replace ('/(^-|-$)/', '', $string);
 		
 		# Return the value
 		return $string;
+	}
+	
+	
+	# Function to convert ereg to preg
+	function pereg ($pattern, $string)
+	{
+		$preg = '/' . addcslashes ($pattern, '/') .'/';
+		return preg_match ($preg, $string);
+	}
+	
+	
+	# Function to convert eregi to preg
+	function peregi ($pattern, $string)
+	{
+		$preg = '/' . addcslashes ($pattern, '/') .'/i';
+		return preg_match ($preg, $string);
+	}
+	
+	
+	# Function to convert eregi_replace to preg_replace
+	function peregi_replace ($pattern, $replace, $string)
+	{
+		// $pattern = str_replace ('[[:space:]]', '\s', $pattern);
+		$preg = '/' . addcslashes ($pattern, '/') .'/i';
+		$preplace = preg_replace ('/\x5c(\d)/', '\$$1', $replace);	// \x5c is a backslash and \d is number, i.e. \2 gets converted to $2
+		return preg_replace ($preg, $preplace, $string);
 	}
 }
 
