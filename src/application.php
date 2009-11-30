@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.0
+ * Version 1.3.1
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -918,7 +918,7 @@ class application
 	function validEmail ($email, $domainPartOnly = false)
 	{
 		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php
-		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[_a-z0-9\$-\+]+(\.[_a-z0-9\$-\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
+		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[-_a-z0-9\$\+]+(\.[-_a-z0-9\$\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
 		
 		# If not an array, perform the check and return the result
 		if (!is_array ($email)) {
@@ -2175,7 +2175,7 @@ class application
 	# Function to convert ereg to preg
 	function pereg ($pattern, $string)
 	{
-		$preg = '/' . addcslashes ($pattern, '/') .'/';
+		$preg = '/' . addcslashes ($pattern, '/') . '/';
 		return preg_match ($preg, $string);
 	}
 	
@@ -2183,7 +2183,7 @@ class application
 	# Function to convert eregi to preg
 	function peregi ($pattern, $string)
 	{
-		$preg = '/' . addcslashes ($pattern, '/') .'/i';
+		$preg = '/' . addcslashes ($pattern, '/') . '/i';
 		return preg_match ($preg, $string);
 	}
 	
@@ -2192,7 +2192,7 @@ class application
 	function peregi_replace ($pattern, $replace, $string)
 	{
 		// $pattern = str_replace ('[[:space:]]', '\s', $pattern);
-		$preg = '/' . addcslashes ($pattern, '/') .'/i';
+		$preg = '/' . addcslashes ($pattern, '/') . '/i';
 		$preplace = preg_replace ('/\x5c(\d)/', '\$$1', $replace);	// \x5c is a backslash and \d is number, i.e. \2 gets converted to $2
 		return preg_replace ($preg, $preplace, $string);
 	}
