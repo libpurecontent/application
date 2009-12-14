@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.1
+ * Version 1.3.2
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1112,7 +1112,7 @@ class application
 	
 	
 	# Function to create a keyed HTML table; $dlFormat is PRIVATE and should not be used externally
-	function htmlTableKeyed ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $dlFormat = false)
+	function htmlTableKeyed ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $addRowKeyClasses = false, $dlFormat = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1151,8 +1151,9 @@ class application
 		# Construct the table and add the data in
 		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"$class\">";
 		foreach ($array as $key => $value) {
-			if (!$dlFormat) {$html .= "\n\t" . '<tr>';}
-			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . ($keySubstitutions && is_array ($keySubstitutions) && array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key) . ($showColons && $key ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
+			if (!$dlFormat) {$html .= "\n\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';}
+			$label = ($keySubstitutions && is_array ($keySubstitutions) && array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key);
+			$html .= "\n\t\t" . ($dlFormat ? '<dt>' : "<td class=\"key\">") . $label . ($showColons && strlen ($label) ? ':' : '') . ($dlFormat ? '</dt>' : '</td>');
 			$html .= "\n\t\t" . ($dlFormat ? '<dd>' : "<td class=\"value\">") . (!$allowHtml ? nl2br (htmlspecialchars ($value)) : $value) . ($dlFormat ? '</dd>' : '</td>');
 			if (!$dlFormat) {$html .= "\n\t" . '</tr>';}
 		}
@@ -1164,9 +1165,9 @@ class application
 	
 	
 	# Function to create a definition list
-	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true)
+	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $addRowKeyClasses = false)
 	{
-		return application::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $dlFormat = true);
+		return application::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $addRowKeyClasses, $dlFormat = true);
 	}
 	
 	
