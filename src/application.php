@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.2
+ * Version 1.3.3
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -886,6 +886,42 @@ class application
 	}
 	
 	
+	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976
+	function utf8Mail ($to, $subject, $message, $extraHeaders = false)
+	{
+		# Add headers
+		$extraHeaders  = "MIME-Version: 1.0\r\n" . "Content-type: text/plain; charset=UTF-8" . ($extraHeaders ? "\r\n" . $extraHeaders : '');
+		
+		# Convert the subject
+		$subject = '=?UTF-8?B?' . base64_encode ($subject) . '?=';
+		
+		# Convert the To field, if supplied as "Name <email>"; /u is not used as this might reject strings, and the splitting seems to work safely without it
+		if (preg_match ('/(.+) <(.+)>/', $to, $matches)) {
+			$to = '=?UTF-8?B?' . base64_encode ($matches[1]) . '?=' . ' ' . "<{$matches[2]}>";
+		}
+		
+		# Send the mail and return the outcome
+		return mail ($to, $subject, $message, $extraHeaders);
+	}
+	
+	
+	# Function to show mail that has been sent
+	function showMail ($to, $subject, $message, $extraHeaders, $prefix = 'The message has been sent, as follows:', $divClass = 'graybox')
+	{
+		# Compile the text, adding headers to the start
+		$text = "{$extraHeaders}\nTo: {$to}\nSubject: {$subject}\n" . $message;
+		
+		# Compile the HTML
+		$html  = "\n<p><strong>{$prefix}</strong></p>";
+		$html .= "\n<div class=\"{$divClass}\">";
+		$html .= "\n<pre>" . self::makeClickableLinks (htmlspecialchars ($text), false, false, $target = false) . '</pre>';
+		$html .= "\n</div>";
+		
+		# Return the HTML
+		return $html;
+	}
+	
+	
 	# Function to get a list of fields that have changed values (this is not the same as array_diff - see comments on www.php.net/array_diff page)
 	function array_changed_values_fields ($array1, $array2)
 	{
@@ -970,11 +1006,12 @@ class application
 	
 	# Function to make links clickable: from www.totallyphp.co.uk/code/convert_links_into_clickable_hyperlinks.htm
 	#!# Need to disallow characters such as ;.) at end of links
-	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false)
+	#!# Target could potentially be derived from a regexp instead
+	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false, $target = '_blank')
 	{
 		$delimiter = '!';
-		$text = preg_replace ($delimiter . '(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '<a target="_blank" href="$1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$1') . '</a>', $text);
-		$text = preg_replace ($delimiter . '([\s()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '$1<a target="_blank" href="http://$2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$2') . '</a>', $text);
+		$text = preg_replace ($delimiter . '(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '<a' . ($target ? " target=\"{$target}\"" : '') . ' href="$1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$1') . '</a>', $text);
+		$text = preg_replace ($delimiter . '([\s()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '$1<a' . ($target ? " target=\"{$target}\"" : '') . ' href="http://$2">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$2') . '</a>', $text);
 		if ($addMailto) {$text = preg_replace ($delimiter . '([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})' . "{$delimiter}i", '<a href="mailto:$1">$1</a>', $text);}
 		return $text;
 	}
