@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.3
+ * Version 1.3.4
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -763,8 +763,9 @@ class application
 		
 		# Convert the string; not sure why this works but see www.php.net/function.iconv#59030
 		if ($iconvIgnore) {$outputCharset .= '//IGNORE';}
-		$string = iconv (NULL, $outputCharset, $string);
-		//echo "<!-- $string -->";
+		if (!$string = iconv (NULL, $outputCharset, $string)) {
+			error_log ('PHP Iconv failed: ' . $outputCharset . ' on URL: ' . $_SERVER['_PAGE_URL'] . ' for string: ' . $string);
+		}
 		
 		# Return the string
 		return $string;
@@ -1506,7 +1507,7 @@ class application
 	function htmlOl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false)
 	{
 		# Get the HTML as an unordered list
-		$html = application::htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false);
+		$html = application::htmlUl ($array, $parentTabLevel = 0, $className, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false);
 		
 		# Convert to an ordered list
 		$html = str_replace (array ('<ul', '</ul>'), array ('<ol', '</ol>'), $html);
@@ -1549,8 +1550,8 @@ class application
 	# Function to create a listing to the results page
 	function splitListItems ($listItems, $columns = 2, $class = 'splitlist')
 	{
-		# Work out where the line break should go for the listing version
-		$lineBreakPosition = floor (count ($listItems) / $columns);
+		# Work out the maximum number of items in a column
+		$maxPerColumn = ceil (count ($listItems) / $columns);
 		
 		# Create the list
 		$html = "\n<table class=\"{$class}\"><tr><td>\n<ul>";
@@ -1558,10 +1559,11 @@ class application
 		foreach ($listItems as $listItem) {
 			$html .= $listItem;
 			
-			# Put a line break in at an appropriate point
-			if ($i++ == $lineBreakPosition) {
+			# Start a new column when the limit is reached
+			$i++;
+			if ($i >= $maxPerColumn) {
 				$html .= "\n</ul>\n</td><td>\n<ul>";
-				$lineBreakPosition += $lineBreakPosition;
+				$i = 0;
 			}
 		}
 		$html .= "\n</ul>\n</td></tr></table>";
