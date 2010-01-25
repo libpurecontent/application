@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.4
+ * Version 1.3.5
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -154,6 +154,10 @@ class application
 				
 			case '302':
 				header ("Location: {$location}");
+				break;
+				
+			case '401':
+				header ('HTTP/1.0 401 Authorization Required');
 				break;
 				
 			case '404':
