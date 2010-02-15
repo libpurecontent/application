@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.5
+ * Version 1.3.6
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -879,6 +879,7 @@ class application
 		$afterChanged = application::arrayFields ($after, $changedFields);
 		
 		# Construct the e-mail message
+		#!# Use of $this-> is wrong for a static class like this
 		$message  = "\nUser {$this->user} has amended {$databaseReference}, with the following fields being changed:";
 		$message .= "\n\n\nBefore:";
 		$message .= "\n\n" . print_r ($beforeChanged, true);
@@ -975,6 +976,18 @@ class application
 			}
 		}
 		return $allValidEmail;
+	}
+	
+	
+	# Function to check that a list of e-mail addresses (space/semi-colon/comma-separated) are all valid
+	function emailListStringToArray ($string)
+	{
+		# Split
+		#!# NB This will catch addresses that contain a comma or semi-colon, but those should be very rare even if they are allowed in the RFC!
+		$addresses = preg_split ("/\s*[,;\s]\s*/", trim ($string), NULL, PREG_SPLIT_NO_EMPTY);
+		
+		# Return the array
+		return $addresses;
 	}
 	
 	
