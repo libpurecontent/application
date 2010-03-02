@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-7
- * Version 1.3.6
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
+ * Version 1.3.7
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -702,24 +702,6 @@ class application
 	}
 	
 	
-	# Function to deal with character/entity processing
-	function safetext ($string, $outputCharset = 'UTF-8')
-	{
-		# Pre-5.2.5 this is the most consistent handling; however, it may not be secure, e.g. if UTF-7 is injected; see: www.shiflett.org/blog/2005/dec/google-xss-example
-		if (version_compare (phpversion (), '5.2.5', '<')) {
-			return htmlentities ($string, ENT_COMPAT, $outputCharset);
-		}
-		
-		# If not outputting UTF-8, clean with entities
-		if ($outputCharset != 'UTF-8') {
-			return $string = htmlentities ($string, ENT_COMPAT, $outputCharset);
-		}
-		
-		# Otherwise return specialchars only, which is what UTF-8 is suited to
-		return htmlspecialchars ($string);
-	}
-	
-	
 	# Function to convert the character set, mainly intended for ISO-8859-1 to UTF-8 conversions, with string/array/multi-dimensional-array (including array key conversion) support
 	function convertToCharset ($variable, $outputCharset = 'UTF-8', $convertKeys = true)
 	{
@@ -860,11 +842,11 @@ class application
 	function sendAdministrativeAlert ($administratorEmail, $applicationName, $subject, $message, $cc = false)
 	{
 		# Define standard e-mail headers
-		$mailheaders = "From: $applicationName <" . $administratorEmail . ">\n";
+		$mailheaders = "From: {$applicationName} <" . $administratorEmail . ">\n";
 		if ($cc) {$mailheaders .= "Cc: {$cc}\n";}
 		
 		# Send the message
-		mail ($administratorEmail, $subject, wordwrap ($message), $mailheaders);
+		self::utf8Mail ($administratorEmail, $subject, wordwrap ($message), $mailheaders);
 	}
 	
 	
@@ -888,26 +870,46 @@ class application
 		
 		# Send the e-mail
 		$mailheaders = 'From: ' . ($applicationName ? $applicationName : __CLASS__) . ' <' . $administratorEmail . '>';
-		mail ($administratorEmail, $emailSubject, wordwrap ($message), $mailheaders);
+		self::utf8Mail ($administratorEmail, $emailSubject, wordwrap ($message), $mailheaders);
 	}
 	
 	
-	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976
-	function utf8Mail ($to, $subject, $message, $extraHeaders = false)
+	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976 ; note that the From/To/Subject headers are only encoded to UTF-8 when they include non-ASCII characters (so that filtering is more likely to work)
+	function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */)
 	{
 		# Add headers
-		$extraHeaders  = "MIME-Version: 1.0\r\n" . "Content-type: text/plain; charset=UTF-8" . ($extraHeaders ? "\r\n" . $extraHeaders : '');
+		$headers  = '';
+		if ($includeMimeContentTypeHeaders) {
+			if ($includeMimeContentTypeHeaders === true) {
+				$includeMimeContentTypeHeaders = 'text/plain';
+			}
+			$headers .= "MIME-Version: 1.0\r\n";
+			$headers .= 'Content-type: ' . $includeMimeContentTypeHeaders . '; charset=UTF-8' . "\r\n";
+		}
+		if ($extraHeaders) {
+			$headers .= $extraHeaders;
+		}
 		
 		# Convert the subject
-		$subject = '=?UTF-8?B?' . base64_encode ($subject) . '?=';
+		if (!preg_match ('/^([[:alnum:]|[:punct:]|[:blank:]]+)$/', $subject)) {
+			$subject = '=?UTF-8?B?' . base64_encode ($subject) . '?=';
+		}
 		
 		# Convert the To field, if supplied as "Name <email>"; /u is not used as this might reject strings, and the splitting seems to work safely without it
 		if (preg_match ('/(.+) <(.+)>/', $to, $matches)) {
-			$to = '=?UTF-8?B?' . base64_encode ($matches[1]) . '?=' . ' ' . "<{$matches[2]}>";
+			if (!preg_match ('/^([[:alnum:]|[:punct:]|[:blank:]]+)$/', $matches[1])) {
+				$to = '=?UTF-8?B?' . base64_encode ($matches[1]) . '?=' . ' ' . "<{$matches[2]}>";
+			}
+		}
+		
+		# Convert a From: header, if it exists, when supplied as "Name <email>"
+		if (!preg_match ('/^From: ([[:alnum:]|[:punct:]|[:blank:]]+)(\r?)$/m', $headers)) {
+			$callbackFunction = create_function ('$matches', 'return "From: =?UTF-8?B?" . base64_encode ($matches[1]) . "?=" . " <{$matches[2]}>{$matches[3]}";');
+			$headers = preg_replace_callback ('/^From: (.+) <([^>]+)>(\r?)$/m', $callbackFunction, $headers);
 		}
 		
 		# Send the mail and return the outcome
-		return mail ($to, $subject, $message, $extraHeaders);
+		return mail ($to, $subject, $message, $headers, $additionalParameters);
 	}
 	
 	
