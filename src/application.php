@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
- * Version 1.3.7
+ * Version 1.3.8
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -730,18 +730,24 @@ class application
 		# End if iconv support is not available
 		if (!function_exists ('iconv')) {return $string;}
 		
-		# Detect the input encoding, using mb_ extension by preference if it is available
-		if (function_exists ('mb_detect_encoding')) {
-			$inputCharset = mb_detect_encoding ($string, 'UTF-8, ISO-8859-1, ISO-8859-15');	// Note UTF-8 must precede others
+		# If a specific charset is mentioned in a meta tag, extract this as the input charset
+		if (preg_match ('|<meta [^>]+content="[^"]+charset=([^"]+)" />|', $string, $matches)) {
+			$inputCharset = $matches[1];
 		} else {
 			
-			# If the mb_ extension is not available, check for UTF-8 and assume ISO-8859-1 otherwise; see http://www.w3.org/International/questions/qa-forms-utf-8.en.php
-			if (strlen ($string) != 0) {
-				$isUtf8 = true;
+			# Detect the input encoding, using mb_ extension by preference if it is available
+			if (function_exists ('mb_detect_encoding')) {
+				$inputCharset = mb_detect_encoding ($string, 'UTF-8, ISO-8859-1, ISO-8859-15');	// Note UTF-8 must precede others
 			} else {
-				$isUtf8 = (preg_match ('/^.{1}/us', $string) == 1);	// See 'function utf8_compliant' on http://www.phpwact.org/php/i18n/charsets
+				
+				# If the mb_ extension is not available, check for UTF-8 and assume ISO-8859-1 otherwise; see http://www.w3.org/International/questions/qa-forms-utf-8.en.php
+				if (strlen ($string) != 0) {
+					$isUtf8 = true;
+				} else {
+					$isUtf8 = (preg_match ('/^.{1}/us', $string) == 1);	// See 'function utf8_compliant' on http://www.phpwact.org/php/i18n/charsets
+				}
+				$inputCharset = ($isUtf8 ? 'UTF-8' : 'ISO-8859-1');
 			}
-			$inputCharset = ($isUtf8 ? 'UTF-8' : 'ISO-8859-1');
 		}
 		
 		# Perform no conversion if the input and output character sets match
@@ -749,7 +755,7 @@ class application
 		
 		# Convert the string; not sure why this works but see www.php.net/function.iconv#59030
 		if ($iconvIgnore) {$outputCharset .= '//IGNORE';}
-		if (!$string = iconv (NULL, $outputCharset, $string)) {
+		if (!$string = iconv ($inputCharset, $outputCharset, $string)) {
 			error_log ('PHP Iconv failed: ' . $outputCharset . ' on URL: ' . $_SERVER['_PAGE_URL'] . ' for string: ' . $string);
 		}
 		
