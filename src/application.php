@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
- * Version 1.3.8
+ * Version 1.3.9
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -857,7 +857,7 @@ class application
 	
 	
 	# Function to e-mail changes between two arrays
-	function mailChanges ($administratorEmail, $before, $after, $databaseReference, $emailSubject, $applicationName = false)
+	function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false)
 	{
 		# End if no changes
 		if (!$changedFields = application::array_changed_values_fields ($before, $after)) {return;}
@@ -867,8 +867,7 @@ class application
 		$afterChanged = application::arrayFields ($after, $changedFields);
 		
 		# Construct the e-mail message
-		#!# Use of $this-> is wrong for a static class like this
-		$message  = "\nUser {$this->user} has amended {$databaseReference}, with the following fields being changed:";
+		$message  = "\nUser {$changedBy} has amended {$databaseReference}, with the following fields being changed:";
 		$message .= "\n\n\nBefore:";
 		$message .= "\n\n" . print_r ($beforeChanged, true);
 		$message .= "\n\n\nAfter:";
@@ -1331,7 +1330,7 @@ class application
 			array_pop ($directories);
 		}
 		
-		# Otherwise return true
+		# Otherwise return true as nothing has been found
 		return true;
 	}
 	
@@ -1581,8 +1580,12 @@ class application
 		# Create the list
 		$html = "\n<table class=\"{$class}\"><tr><td>\n<ul>";
 		$i = 0;
+		$totalListItems = count ($listItems);
 		foreach ($listItems as $listItem) {
 			$html .= $listItem;
+			
+			# Do not split if there are fewer items than columns
+			if ($totalListItems < $columns) {continue;}
 			
 			# Start a new column when the limit is reached
 			$i++;
