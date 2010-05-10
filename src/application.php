@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
- * Version 1.3.9
+ * Version 1.3.10
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -34,7 +34,7 @@ class application
 		foreach ($argumentDefaults as $argument => $defaultValue) {
 			if (is_null ($defaultValue)) {
 				if (!isSet ($suppliedArguments[$argument])) {
-					$errors['absent' . ucfirst ($functionName) . ucfirst ($argument)] = "No '<strong>$argument</strong>' has been set in the '<strong>$functionName</strong>' specification.";
+					$errors['absent' . ucfirst ($functionName) . ucfirst ($argument)] = "No '<strong>{$argument}</strong>' has been set in the '<strong>{$functionName}</strong>' specification.";
 					$arguments[$argument] = $defaultValue;
 				} else {
 					$arguments[$argument] = $suppliedArguments[$argument];
@@ -524,6 +524,26 @@ class application
 		
 		# Return the sorted list
 		return $items;
+	}
+	
+	
+	# Function to natsort an array by key; note that this does not return by reference (unlike natsort)
+	function natsortField ($array, $fieldname)
+	{
+		# Create a function which creates an array of the two values, then compares the original array with a natsorted copy
+		$functionCode = '
+			$original = array ($a[\'' . $fieldname . '\'], $b[\'' . $fieldname . '\']);
+			$copy = $original;
+			natsort ($copy);
+			return ($copy === $original ? -1 : 1);
+		';
+		
+		# Do the comparison
+		$natsortFieldFunction = create_function ('$a,$b', $functionCode);
+		uasort ($array, $natsortFieldFunction);
+		
+		# Return the sorted list
+		return $array;
 	}
 	
 	
@@ -1117,7 +1137,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $keyAsFirstColumn = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeyClasses = false, $onlyFields = array (), $compress = false, $showHeadings = true)
+	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $keyAsFirstColumn = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeyClasses = false, $onlyFields = array (), $compress = false, $showHeadings = true, $encodeEmailAddress = true)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1141,8 +1161,8 @@ class application
 				$i++;
 				$data = $array[$key][$valueKey];
 				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
-				#!# encodeEmailAddress should be optional
-				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . application::encodeEmailAddress (!$allowHtml ? htmlspecialchars ($data) : $data) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$cellContents = (!$allowHtml ? htmlspecialchars ($data) : $data);
+				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? application::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
 		}
