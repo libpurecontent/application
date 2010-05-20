@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
- * Version 1.3.11
+ * Version 1.3.12
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -881,7 +881,7 @@ class application
 	
 	
 	# Function to e-mail changes between two arrays
-	function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false)
+	function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false)
 	{
 		# End if no changes
 		if (!$changedFields = application::array_changed_values_fields ($before, $after)) {return;}
@@ -898,7 +898,8 @@ class application
 		$message .= "\n\n" . print_r ($afterChanged, true);
 		
 		# Send the e-mail
-		$mailheaders = 'From: ' . ($applicationName ? $applicationName : __CLASS__) . ' <' . $administratorEmail . '>';
+		$mailheaders  = 'From: ' . ($applicationName ? $applicationName : __CLASS__) . ' <' . $administratorEmail . '>';
+		if ($replyTo) {$mailheaders .= "\n" . 'Reply-To: ' . $replyTo;}
 		self::utf8Mail ($administratorEmail, $emailSubject, wordwrap ($message), $mailheaders);
 	}
 	
@@ -1869,8 +1870,9 @@ class application
 	}
 	
 	
-	#!# Not finished - needs file handling
 	# Wrapper function to get CSV data
+	#!# Not finished - needs file handling
+	#!# Need to merge this with csv::getData
 	function getCsvData ($filename, $getHeaders = false, $assignKeys = false, $keyAsFirstRow = false)
 	{
 		# Make sure the file exists
@@ -1897,6 +1899,7 @@ class application
 				$rowKey = ($assignKeys ? $assignedKey++ : $firstRowCell);
 				
 				# Loop through each item of data
+				#!# What should happen if a row has fewer columns than another? If there are fields missing, then it may be better to allow offsets to be generated as otherwise the data error may not be known. Filling in the remaining fields is probably wrong as we don't know which are missing.
 				foreach ($csvData as $key => $value) {
 					
 					# Assign the entry into the table
