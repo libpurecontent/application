@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
- * Version 1.3.12
+ * Version 1.3.13
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -136,25 +136,31 @@ class application
 	
 	
 	# Function to send an HTTP header such as a 404; note that output buffering must have been switched on at server level
-	function sendHeader ($statusCode, $location = false)
+	function sendHeader ($statusCode, $url = false, $redirectMessage = false)
 	{
+		# Determine whether to use a redirect message
+		if ($redirectMessage) {
+			if ($redirectMessage === true) {	// Convert (bool)true to a default string
+				$redirectMessage = "\n" . '<p><a href="%s">Click here to continue to the next page.</a></p>';
+			}
+			$redirectMessage = sprintf ($redirectMessage, $url);
+		}
+		
 		# Select the appropriate header
 		switch ($statusCode) {
 			
+			case 'refresh':
+				$url = $_SERVER['_PAGE_URL'];
+				// Fall through to 301
+				
 			case '301':
 				header ('HTTP/1.1 301 Moved Permanently');
-				header ("Location: {$location}");
-				break;
-				
-			case 'refresh':
-				$location = $_SERVER['_PAGE_URL'];
-				header ('HTTP/1.1 301 Moved Permanently');
-				header ("Location: {$location}");
-				break;
+				header ("Location: {$url}");
+				return $redirectMessage;
 				
 			case '302':
-				header ("Location: {$location}");
-				break;
+				header ("Location: {$url}");
+				return $redirectMessage;
 				
 			case '401':
 				header ('HTTP/1.0 401 Authorization Required');
