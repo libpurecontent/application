@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-10
- * Version 1.3.13
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-11
+ * Version 1.3.14
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -809,7 +809,7 @@ class application
 		$text = str_replace ("\n\n", '</p><p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .'>', $text);
 		$text = str_replace ("\n", '<br />', $text);
 		$text = str_replace (array ('</p>', '<br />'), array ("</p>\n", "<br />\n"), $text);
-		$text = '<p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .">$text</p>";
+		$text = '<p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .">{$text}</p>";
 		
 		# Return the text
 		return $text;
@@ -1163,7 +1163,7 @@ class application
 			$headings = $value;
 			$dataHtml .= "\n\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';
 			if ($keyAsFirstColumn) {
-				$thisCellClass = ($addCellClasses ? htmlspecialchars ($key) : '') . ($keyAsFirstColumn ? ($addCellClasses ? ' ' : '') . 'key' : '');
+				$thisCellClass = ($addCellClasses ? htmlspecialchars ($key) . ((is_array ($addCellClasses) && isSet ($addCellClasses[$key])) ? ' ' . $addCellClasses[$key] : '') : '') . ($keyAsFirstColumn ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
 			$i = 0;
@@ -1171,7 +1171,7 @@ class application
 				if ($onlyFields && !in_array ($valueKey, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$i++;
 				$data = $array[$key][$valueKey];
-				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
+				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) . ((is_array ($addCellClasses) && isSet ($addCellClasses[$valueKey])) ? ' ' . $addCellClasses[$valueKey] : '') : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$cellContents = (!$allowHtml ? htmlspecialchars ($data) : $data);
 				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? application::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
@@ -1187,14 +1187,13 @@ class application
 			foreach ($columns as $column) {
 				if ($onlyFields && !in_array ($column, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-				$headingHtml .= "\n\t\t" . ($addCellClasses ? "<th class=\"{$column}\">" : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+				$headingHtml .= "\n\t\t" . ($addCellClasses ? '<th class="' . $column . ((is_array ($addCellClasses) && isSet ($addCellClasses[$column])) ? ' ' . $addCellClasses[$column] : '') . '">' : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
 			$headingHtml .= "\n\t" . '</tr>';
 		}
 		
-		
 		# Construct the overall heading
-		$html  = "\n\n" . "<table class=\"$class\">";
+		$html  = "\n\n" . "<table class=\"{$class}\">";
 		if ($showHeadings) {$html .= $headingHtml;}
 		$html .= $dataHtml;
 		$html .= "\n" . '</table>';
