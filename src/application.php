@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-11
- * Version 1.3.14
+ * Version 1.3.15
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -809,7 +809,7 @@ class application
 		$text = str_replace ("\n\n", '</p><p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .'>', $text);
 		$text = str_replace ("\n", '<br />', $text);
 		$text = str_replace (array ('</p>', '<br />'), array ("</p>\n", "<br />\n"), $text);
-		$text = '<p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .">{$text}</p>";
+		$text = '<p' . ($paragraphClass ? " class=\"{$paragraphClass}\"" : '' ) .">$text</p>";
 		
 		# Return the text
 		return $text;
@@ -1602,14 +1602,16 @@ class application
 	
 	
 	# Function to create a listing to the results page
-	function splitListItems ($listItems, $columns = 2, $class = 'splitlist')
+	function splitListItems ($listItems, $columns = 2, $class = 'splitlist', $byStrlen = false)
 	{
 		# Work out the maximum number of items in a column
 		$maxPerColumn = ceil (count ($listItems) / $columns);
+		if ($byStrlen) {$maxPerColumn = ceil (strlen (implode ($listItems)) / $columns);}
 		
 		# Create the list
 		$html = "\n<table class=\"{$class}\"><tr><td>\n<ul>";
 		$i = 0;
+		$strlen = 0;
 		$totalListItems = count ($listItems);
 		foreach ($listItems as $listItem) {
 			$html .= $listItem;
@@ -1619,9 +1621,11 @@ class application
 			
 			# Start a new column when the limit is reached
 			$i++;
-			if ($i >= $maxPerColumn) {
+			$strlen += strlen ($listItem);
+			if (($byStrlen ? $strlen : $i) >= $maxPerColumn) {
 				$html .= "\n</ul>\n</td><td>\n<ul>";
 				$i = 0;
+				$strlen = 0;
 			}
 		}
 		$html .= "\n</ul>\n</td></tr></table>";
