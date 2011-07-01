@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-11
- * Version 1.3.15
+ * Version 1.3.16
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1017,12 +1017,15 @@ class application
 	}
 	
 	
-	# Function to check that a list of e-mail addresses (space/semi-colon/comma-separated) are all valid
-	function emailListStringToArray ($string)
+	# Function to check that a list of e-mail addresses (comma-space only by default, in line with HTML5 <input type="email" multiple="multiple" /> but space/semi-colon/comma-separated can be enabled)
+	function emailListStringToArray ($string, $commaspaceOnly = true)
 	{
+		# Determine the match
+		$match = ($commaspaceOnly ? ",\s" : "\s*[,;\s]\s*");
+		
 		# Split
 		#!# NB This will catch addresses that contain a comma or semi-colon, but those should be very rare even if they are allowed in the RFC!
-		$addresses = preg_split ("/\s*[,;\s]\s*/", trim ($string), NULL, PREG_SPLIT_NO_EMPTY);
+		$addresses = preg_split ("/{$match}/", trim ($string), NULL, PREG_SPLIT_NO_EMPTY);
 		
 		# Return the array
 		return $addresses;
