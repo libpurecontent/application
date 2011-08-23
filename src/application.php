@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-11
- * Version 1.3.16
+ * Version 1.3.17
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -944,8 +944,49 @@ class application
 			$headers = preg_replace_callback ('/^From: (.+) <([^>]+)>(\r?)$/m', $callbackFunction, $headers);
 		}
 		
-		# Send the mail and return the outcome
-		return mail ($to, $subject, $message, $headers, $additionalParameters);
+		# If using SMTP auth, use the PEAR::Mail module
+		$useSmtpAuth = (isSet ($_SERVER['SMTP_HOST']) && isSet ($_SERVER['SMTP_PORT']) && isSet ($_SERVER['SMTP_USERNAME']) && isSet ($_SERVER['SMTP_PASSWORD']));
+		if ($useSmtpAuth) {
+			
+			# Define the SMTP Auth credentials
+			$smtpAuthCredentials = array (
+				'auth' => true,
+				'host' => $_SERVER['SMTP_HOST'],
+				'port' => (int) $_SERVER['SMTP_PORT'],
+				'username' => $_SERVER['SMTP_USERNAME'],
+				'password' => $_SERVER['SMTP_PASSWORD'],
+			);
+			
+			# Assemble the headers
+			$headersArray = array (
+				'To' => $to,
+				'Subject' => $subject,
+			);
+			$extraHeaders = explode ("\n", trim ($headers));
+			foreach ($extraHeaders as $header) {
+				list ($key, $value) = explode (':', trim ($header), 2);
+				$key = trim ($key);
+				$value = trim ($value);
+				$headersArray[$key] = $value;
+			}
+			
+			# Create the mail object using the Mail::factory method 
+			require_once ('Mail.php');
+			$mailObject =& Mail::factory ('smtp', $smtpAuthCredentials);
+			
+			# Send the mail
+			$mailObject->send ($to, $headersArray, $message);
+			$isError = (bool) PEAR::isError ($mailObject);
+			
+			# Return the outcome
+			return (!$isError);
+			
+		# Otherwise use the native PHP method
+		} else {
+			
+			# Send the mail and return the outcome
+			return mail ($to, $subject, $message, $headers, $additionalParameters);
+		}
 	}
 	
 	
