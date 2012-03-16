@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-11
- * Version 1.3.18
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
+ * Version 1.3.19
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1934,8 +1934,18 @@ class application
 		# Open the file
 		if (!$fileHandle = fopen ($filename, 'rb')) {return false;}
 		
+		# Determine the longest line length
+		$longestLineLength = 1000;
+		$array = file ($filename);
+		for ($i = 0; $i < count ($array); $i++) {
+			if ($longestLineLength < strlen ($array[$i])) {
+				$longestLineLength = strlen ($array[$i]);
+			}
+		}
+		unset ($array);
+		
 		# Get the column names
-		if (!$mappings = fgetcsv ($fileHandle, filesize ($filename))) {return false;}
+		if (!$mappings = fgetcsv ($fileHandle, $longestLineLength + 1)) {return false;}
 		
 		# Start a counter if assigning keys
 		if ($assignKeys) {$assignedKey = 0;}
