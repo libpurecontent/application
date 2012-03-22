@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.19
+ * Version 1.3.20
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2084,28 +2084,61 @@ class application
 	
 	
 	# Function to enable pagination - based on www.phpnoise.com/tutorials/9/1
-	function getPagerData ($items, $limit, $page)
+	function getPagerData ($items, $limitPerPage, $page)
 	{
 		# Take the number of items
 		$items = (int) $items;
 		
 		# Ensure the limit is at least 1
-		$limit = max ((int) $limit, 1);
+		$limitPerPage = max ((int) $limitPerPage, 1);
 		
 		# Ensure the page is at least 1
 		$page = max ((int) $page, 1);
 		
 		# Get the total number of pages (items divided by the number of pages, rounded up to catch the last (potentially incomplete) page)
-		$totalPages = ceil ($items / $limit);
+		$totalPages = ceil ($items / $limitPerPage);
 		
 		# Ensure the page is no more than the number of pages
 		$page = min ($page, $totalPages);
 		
 		# Define the offset, taking page 1 (rather than 0) as the first page
-		$offset = ($page - 1) * $limit;
+		$offset = ($page - 1) * $limitPerPage;
 		
 		# Return the result
-		return array ($totalPages, $offset, $items, $limit, $page);
+		return array ($totalPages, $offset, $items, $limitPerPage, $page);
+	}
+	
+	
+	# Pagination links
+	public function paginationLinks ($page, $totalPages, $baseLink, $queryString /* i.e. the complete string, e.g. foo=bar&person=john */, $ulClass = 'paginationlinks')
+	{
+		# Avoid creating pagination if there is only one page
+		if ($totalPages == 1) {return '';}
+		
+		# Assemble the query string
+		$queryString = '?' . htmlspecialchars ($queryString);
+		
+		# Create a jumplist
+		$current = $baseLink . "page{$page}.html{$queryString}";
+		for ($i = 1; $i <= $totalPages; $i++) {
+			$link = $baseLink . ($i == 1 ? '' : "page{$i}.html") . $queryString;
+			$pages[$link] = "Page {$i} <span class=\"faded\">of {$totalPages}</span>";
+		}
+		$jumplist = pureContent::htmlJumplist ($pages, $current, $baseLink, $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = '');
+		
+		# Create pagination HTML
+		$paginationLinks['introduction'] = 'Switch page: ';
+		$paginationLinks['start'] = (($page != 1) ? "<a href=\"./{$queryString}\">&laquo;</a>" : '<span class="faded">&laquo;</span>');
+		$paginationLinks['previous'] = (($page > 1) ? '<a href="' . ($page == 2 ? "./{$queryString}" : 'page' . ($page - 1) . ".html{$queryString}") . '">&lt;</a>' : '<span class="faded">&lt;</span>');
+		$paginationLinks['root'] = $jumplist;
+		$paginationLinks['next'] = (($page < $totalPages) ? "<a href=\"page" . ($page + 1) . ".html{$queryString}\">&gt;</a>" : '<span class="faded">&gt;</span>');
+		$paginationLinks['end'] = (($page != $totalPages) ? "<a href=\"page{$totalPages}.html{$queryString}\">&raquo;</a>" : '<span class="faded">&raquo;</span>');
+		
+		# Compile the HTML
+		$html = application::htmlUl ($paginationLinks, 0, $ulClass, true, false, false, $liClass = true);
+		
+		# Return the HTML
+		return $html;
 	}
 	
 	
