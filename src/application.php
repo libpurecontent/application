@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.20
+ * Version 1.3.21
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1164,7 +1164,7 @@ class application
 	}
 	
 	
-	# This function extracts the title of the page in question by opening the first $startingCharacters characters of the file and extracting what's between the <$tag> tags
+	# Function to extract the title of the page in question by opening the first $startingCharacters characters of the file and extracting what's between the <$tag> tags
 	function getTitleFromFileContents ($contents, $startingCharacters = 100, $tag = 'h1')
 	{
 		# Define the starting and closing tags
@@ -1188,6 +1188,30 @@ class application
 		
 		# Send the title back as the result
 		return $title;
+	}
+	
+	
+	# Function to add a class to tags within some HTML, combining with existing classes if present
+	function addClassesToTags ($html, $tag, $class)
+	{
+		# Add a class to each
+		$html = str_replace ("<{$tag}", "<{$tag} class=\"{$class}\"", $html);
+		
+		# Get each opening tag of the specified type, so that it can be modified
+		$delimiter = '@';
+		if ($result = preg_match_all ($delimiter . addcslashes ('<' . $tag . '([^>]+)class="' . $class . '"([^>]+)class="([^"]+)"([^>]+)>', $delimiter) . $delimiter, $html, $matches, PREG_SET_ORDER)) {
+			foreach ($matches as $match) {
+				$original = $match[0];
+				$replacement = str_replace ('  ', ' ', "<{$tag}{$match[1]}class=\"{$class} {$match[3]}\"{$match[2]}{$match[4]}>");
+				$replacements[$original] = $replacement;
+			}
+			
+			# Perform the substitutions
+			$html = str_replace (array_keys ($replacements), array_values ($replacements), $html);
+		}
+		
+		# Return the HTML
+		return $html;
 	}
 	
 	
