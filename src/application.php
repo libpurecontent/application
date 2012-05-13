@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.21
+ * Version 1.3.22
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -913,6 +913,25 @@ class application
 	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976 ; note that the From/To/Subject headers are only encoded to UTF-8 when they include non-ASCII characters (so that filtering is more likely to work)
 	function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */)
 	{
+		# If the message is text+html, supplied as array('text'=>$text,'html'=>$htmlVersion), set this up; see http://krijnhoetmer.nl/stuff/php/html-plain-text-mail/
+		$isMultipart = false;
+		if (is_array ($message) && (count ($message) == 2) && isSet ($message['text']) && isSet ($message['html'])) {
+			$isMultipart = true;
+			$boundary = uniqid ('np');
+			$includeMimeContentTypeHeaders = 'multipart/alternative;boundary=' . $boundary;
+			
+			# Compile the message
+			$multipartMessage  = 'This is a MIME encoded message.';
+			$multipartMessage .= "\r\n\r\n--" . $boundary . "\r\n";
+			$multipartMessage .= "Content-type: text/plain;charset=utf-8\r\n\r\n";
+			$multipartMessage .= $message['text'];
+			$multipartMessage .= "\r\n\r\n--" . $boundary . "\r\n";
+			$multipartMessage .= "Content-type: text/html;charset=utf-8\r\n\r\n";
+			$multipartMessage .= $message['html'];
+			$multipartMessage .= "\r\n\r\n--" . $boundary . '--';
+			$message = $multipartMessage;
+		}
+		
 		# Add headers
 		$headers  = '';
 		if ($includeMimeContentTypeHeaders) {
@@ -920,7 +939,7 @@ class application
 				$includeMimeContentTypeHeaders = 'text/plain';
 			}
 			$headers .= "MIME-Version: 1.0\r\n";
-			$headers .= 'Content-type: ' . $includeMimeContentTypeHeaders . '; charset=UTF-8' . "\r\n";
+			$headers .= 'Content-type: ' . $includeMimeContentTypeHeaders . ($isMultipart ? '' : '; charset=UTF-8') . "\r\n";
 		}
 		if ($extraHeaders) {
 			$headers .= $extraHeaders;
