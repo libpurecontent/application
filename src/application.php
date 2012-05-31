@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.22
+ * Version 1.3.23
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2153,13 +2153,15 @@ class application
 	
 	
 	# Pagination links
-	public function paginationLinks ($page, $totalPages, $baseLink, $queryString /* i.e. the complete string, e.g. foo=bar&person=john */, $ulClass = 'paginationlinks')
+	public function paginationLinks ($page, $totalPages, $baseLink, $queryString = '' /* i.e. the complete string, e.g. foo=bar&person=john */, $ulClass = 'paginationlinks')
 	{
 		# Avoid creating pagination if there is only one page
 		if ($totalPages == 1) {return '';}
 		
-		# Assemble the query string
-		$queryString = '?' . htmlspecialchars ($queryString);
+		# Prepend the ? to the query string if not empty
+		if ($queryString) {
+			$queryString = '?' . htmlspecialchars ($queryString);
+		}
 		
 		# Create a jumplist
 		$current = $baseLink . "page{$page}.html{$queryString}";
