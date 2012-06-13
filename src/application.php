@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.23
+ * Version 1.3.24
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1532,7 +1532,8 @@ class application
 	
 	# Function to convert camelCase to standard text
 	#!# Accept an array so it loops through all
-	function changeCase ($string)
+	#!# Doesn't deal well with letters following numbers, e.g. 'option12foo' becomes 'Option 12foo'
+	function unCamelCase ($string)
 	{
 		# Special case certain words
 		$replacements = array (
@@ -1542,12 +1543,12 @@ class application
 		
 		# Perform the conversion; based on www.php.net/ucwords#49303
 		$string = ucfirst ($string);
-		$bits = preg_split ('/([A-Z])/', $string, false, PREG_SPLIT_DELIM_CAPTURE);
+		$parts = preg_split ('/([A-Z]|[0-9]+)/', $string, false, PREG_SPLIT_DELIM_CAPTURE);
 		$words = array ();
-		array_shift ($bits);
-		for ($i = 0; $i < count ($bits); ++$i) {
+		array_shift ($parts);
+		for ($i = 0; $i < count ($parts); ++$i) {
 			if ($i % 2) {
-				$word = strtolower ($bits[$i - 1] . $bits[$i]);
+				$word = strtolower ($parts[$i - 1] . $parts[$i]);
 				$word = str_replace (array_keys ($replacements), array_values ($replacements), $word);
 				$words[] = $word;
 			}
