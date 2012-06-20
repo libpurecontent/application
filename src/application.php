@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.24
+ * Version 1.3.25
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1184,23 +1184,20 @@ class application
 	
 	
 	# Function to extract the title of the page in question by opening the first $startingCharacters characters of the file and extracting what's between the <$tag> tags
-	function getTitleFromFileContents ($contents, $startingCharacters = 100, $tag = 'h1')
+	function getTitleFromFileContents ($html, $startingCharacters = 100, $tag = 'h1')
 	{
 		# Define the starting and closing tags
-		$startingTag = "<{$tag}";
+		$startingTag = "<{$tag}[^>]*>";
 		$closingTag = "</{$tag}>";
 		
-		# Search through the contents case-insensitively
-		$html = stristr ($contents, $startingTag);
+		# Do a case-insensitive match or end, using a negative lookahead regexp
+		if (!$result = preg_match ("~{$startingTag}(?!{$closingTag})(.+){$closingTag}~i", $html, $temporary)) {return '';}
 		
-		# Extract what is between the $startingTag and the $closingTag
-		$title = '';
-		$result = preg_match ("~({$startingTag}.+{$closingTag})~i", $html, $temporary);
-		if ($result) {
-			preg_match ("~([^>]*{$closingTag})~i", $temporary[0], $out);
-			$title = trim ($out[0]); 
-		}
-		$title = str_replace ($closingTag, '', $title);
+		# Trim
+		$title = trim ($temporary[1]);
+		
+		# Strip tags
+		$title = strip_tags ($title);
 		
 		# Un-decode entities
 		$title = htmlspecialchars_decode ($title);
