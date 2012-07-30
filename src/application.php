@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.25
+ * Version 1.3.26
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1584,7 +1584,7 @@ class application
 	
 	
 	# Function to regroup a data set into separate groups
-	function regroup ($data, $regroupByColumn, $removeGroupColumn = true)
+	function regroup ($data, $regroupByColumn, $removeGroupColumn = true, $regroupedColumnKnownUnique = false)
 	{
 		# Return the data unmodified if not an array or empty
 		if (!is_array ($data) || empty ($data)) {return $data;}
@@ -1596,7 +1596,13 @@ class application
 			if ($removeGroupColumn) {
 				unset ($data[$key][$regroupByColumn]);
 			}
-			$rearrangedData[$grouping][$key] = $data[$key];
+			
+			# Add the data; if the regroup-by column is known to be unique, then don't create a nested array
+			if ($regroupedColumnKnownUnique) {
+				$rearrangedData[$grouping] = $data[$key];
+			} else {
+				$rearrangedData[$grouping][$key] = $data[$key];
+			}
 		}
 		
 		# Return the data
