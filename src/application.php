@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.26
+ * Version 1.3.27
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -178,6 +178,37 @@ class application
 				header ('HTTP/1.1 500 Internal Server Error');
 				break;
 		}
+	}
+	
+	
+	# Function to set a flash message
+	public function setFlashMessage ($name, $value, $redirectTo, $redirectMessage = false, $path = '/')
+	{
+		# Set the cookie
+		setcookie ("flashredirect_{$name}", $value, time () + (60*5), $path);
+		
+		# Redirect to the specified location
+		$html = application::sendHeader (301, $_SERVER['_SITE_URL'] . $redirectTo, $redirectMessage);
+		
+		# Return the HTML which will be displayed as the fallback
+		return $html;
+	}
+	
+	
+	# Function to get a flash message
+	public function getFlashMessage ($name, $path = '/')
+	{
+		# End if there is no such cookie
+		if (!isSet ($_COOKIE["flashredirect_{$name}"])) {return false;}
+		
+		# Get the message
+		$message = $_COOKIE["flashredirect_{$name}"];
+		
+		# Destroy the cookie
+		setcookie ("flashredirect_{$name}", '0', 0, $path);	// '0' for the value is the only way of deleting the cookie - the docs suggest '' is OK but this doesn't actually work
+		
+		# Return true to signify the message should be shown
+		return $message;
 	}
 	
 	
@@ -2062,6 +2093,104 @@ class application
 		
 		# Return the result
 		return array ($headerLine, $dataLine);
+	}
+	
+	
+	# Function to parse a set of numeric items, e.g. '12,134-6' => array(12,134,135,136)
+	public function parseRangeList ($string, &$errorMessage)
+	{
+		# End if not syntactically valid
+		if (!preg_match ('/^[-,0-9]*[0-9]$/', $string)) {	// * is used otherwise a single, one-digit number, e.g. '4', won't be accepted
+			$errorMessage = 'The set of location numbers you specified is not syntactically valid.';
+			return false;
+		}
+		
+		# Start an array of IDs
+		$ids = array ();
+		
+		# Split the list into a set of tokens separated by comma
+		$tokens = explode (',', $string);
+		foreach ($tokens as $token) {
+			
+			# Put single IDs directly into the list
+			if (ctype_digit ($token)) {
+				$ids[] = $token;
+				continue;
+			}
+			
+			# The remainder must be ranges, i.e. xxxx-yyyy (though an invalid xxxx-yyyy-zzzz could be present), so expand these, ensuring that there are not too many
+			if (!$token = self::expandRange ($token, $errorMessage)) {
+				return false;
+			}
+			$list = explode (' ', $token);
+			$ids = array_merge ($ids, $list);
+		}
+		
+		# Remove duplicates
+		$ids = array_unique ($ids);
+		
+		# Return the list of IDs
+		return $ids;
+	}
+	
+	
+	/**
+	 * Function to string-replace cases of e.g. '9532-4' to '9532 9533 9534' within a longer string
+	 *
+	 */
+	public function expandRange ($string, &$errorMessage)
+	{
+		# Find any matches (ending if none), and extract the first and last location number for each
+		if (!preg_match_all ('/^([0-9]+)-([0-9]+)$/', $string, $matches, PREG_SET_ORDER)) {
+			$errorMessage = 'The range you specified is not valid.';	// e.g. caused by '1-2-3'
+			return false;
+		}
+		
+		# Deal with each match
+		foreach ($matches as $match) {
+			
+			# Compute the difference
+			$start	= $match[1];
+			$end	= $match[2];
+			$difference = $end - $start;
+			
+			# If the difference is negative, and the start string is of fewer characters than the end string, then this is in the format 980-95 meaning 980-995
+			if (($difference < 0) && (strlen ($start) > strlen ($end))) {
+				
+				# Add add on the starting figures from the start to produce the new end, e.g. '9'.'95' makes 995, and recompute the difference
+				$addCharactersFromStart = strlen ($start) - strlen ($end);
+				$end = substr ($start, 0, $addCharactersFromStart) . $end;
+				$difference = $end - $start;
+			}
+			
+			# If the difference is still negative, end
+			if ($difference < 0) {
+				$errorMessage = 'The range you specified must begin with a smaller number.';
+				return false;
+			}
+			
+			# If there is a difference
+			if ($difference) {
+				$maximumTotal = 50;
+				if (($difference + 1) > $maximumTotal) {	// E.g. 12-17 is a difference of 5 but is 6 photos, hence the +1
+					$errorMessage = 'Sorry, the total number of items (' . ($difference + 1) . ") in the range you specified ({$start}-{$end}) is too great; a maximum of {$maximumTotal} items in a range is allowed. Please check and try again.";
+					return false;
+				}
+				$new = array ();
+				for ($i = $start; $i <= $end; $i++) {
+					$new[] = $i;
+				}
+				
+				# Perform the substitution
+				$string = preg_replace ("/\b{$match[0]}\b/", implode (' ', $new), $string);
+			}
+		}
+		
+		# Trim surrounding whitespace
+		$string = trim ($string);
+		
+		# Return the replaced string
+		return $string;
 	}
 	
 	
