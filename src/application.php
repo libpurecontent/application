@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.27
+ * Version 1.3.28
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2093,6 +2093,26 @@ class application
 		
 		# Return the result
 		return array ($headerLine, $dataLine);
+	}
+	
+	
+	# Function to convert a text block to a list
+	public function textareaToList ($string)
+	{
+		# End if none
+		if (!strlen ($string)) {return array ();}
+		
+		# Create a list of items
+		$list = array ();
+		$items = explode ("\n", $string);
+		foreach ($items as $item) {
+			$item = trim ($item);
+			if (!strlen ($item)) {continue;}	// Skip empty lines
+			$list[] = $item;
+		}
+		
+		# Return the list
+		return $list;
 	}
 	
 	
