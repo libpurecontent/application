@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.28
+ * Version 1.3.29
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2214,6 +2214,37 @@ class application
 	}
 	
 	
+	# Helper function to convert a list of pipe-surrounded tokens to a uniqued list, e.g. array('|a|b|','|c|') becomes array ('a','b','c'); in lookup mode, retain the originals as the keys and provide a list instead
+	public function splitCombinedTokenList ($data, $lookupMode = false, $separator = '|')
+	{
+		# End if no data
+		if (!$data) {return array ();}
+		
+		# Extract each item
+		$list = array ();
+		foreach ($data as $item) {
+			$tokens = explode ($separator, trim ($item));
+			foreach ($tokens as $token) {
+				$token = trim ($token);
+				if ($token == $separator || !strlen ($token)) {continue;}
+				if ($lookupMode) {
+					$list[$item][] = $token;	// This will automatically avoid duplicates because of the keying
+				} else {
+					$list[] = $token;
+				}
+			}
+		}
+		
+		# Unique the list if required
+		if (!$lookupMode) {
+			$list = array_unique ($list);
+		}
+		
+		# Return the list
+		return $list;
+	}
+	
+	
 	# Called function to make a data cell CSV-safe
 	function csvSafeDataCell ($data, $delimiter = ',')
 	{
@@ -2299,6 +2330,7 @@ class application
 		
 		# Define the offset, taking page 1 (rather than 0) as the first page
 		$offset = ($page - 1) * $limitPerPage;
+		if ($offset < 0) {$offset = 0;}	// Prevent a negative offset if the page is 0 (i.e. due to no results)
 		
 		# Return the result
 		return array ($totalPages, $offset, $items, $limitPerPage, $page);
