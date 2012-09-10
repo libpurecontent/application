@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.29
+ * Version 1.3.30
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2338,31 +2338,30 @@ class application
 	
 	
 	# Pagination links
-	public function paginationLinks ($page, $totalPages, $baseLink, $queryString = '' /* i.e. the complete string, e.g. foo=bar&person=john */, $ulClass = 'paginationlinks')
+	public function paginationLinks ($page, $totalPages, $baseLink, $queryString = '' /* i.e. the complete string, e.g. foo=bar&person=john */, $ulClass = 'paginationlinks', $pageInQueryString = false)
 	{
 		# Avoid creating pagination if there is only one page
 		if ($totalPages == 1) {return '';}
 		
-		# Prepend the ? to the query string if not empty
-		if ($queryString) {
-			$queryString = '?' . htmlspecialchars ($queryString);
-		}
+		# Determine a pattern for the link, and a special-case link for page 1 (which has no page number added)
+		$linkFormat = $baseLink . ($pageInQueryString ? '?page=%s' . ($queryString ? '&amp;' . htmlspecialchars ($queryString) : '') : 'page%s.html' . ($queryString ? '?' . htmlspecialchars ($queryString) : ''));
+		$linkFormatPage1 = $baseLink . ($queryString ? '?' . htmlspecialchars ($queryString) : '');
 		
 		# Create a jumplist
-		$current = $baseLink . "page{$page}.html{$queryString}";
+		$current = ($page == 1 ? $linkFormatPage1 : sprintf ($linkFormat, $page));
 		for ($i = 1; $i <= $totalPages; $i++) {
-			$link = $baseLink . ($i == 1 ? '' : "page{$i}.html") . $queryString;
+			$link = ($i == 1 ? $linkFormatPage1 : sprintf ($linkFormat, $i));
 			$pages[$link] = "Page {$i} <span class=\"faded\">of {$totalPages}</span>";
 		}
 		$jumplist = pureContent::htmlJumplist ($pages, $current, $baseLink, $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = '');
 		
 		# Create pagination HTML
 		$paginationLinks['introduction'] = 'Switch page: ';
-		$paginationLinks['start'] = (($page != 1) ? "<a href=\"./{$queryString}\">&laquo;</a>" : '<span class="faded">&laquo;</span>');
-		$paginationLinks['previous'] = (($page > 1) ? '<a href="' . ($page == 2 ? "./{$queryString}" : 'page' . ($page - 1) . ".html{$queryString}") . '">&lt;</a>' : '<span class="faded">&lt;</span>');
+		$paginationLinks['start'] = (($page != 1) ? '<a href="' . $linkFormatPage1 . '">&laquo;</a>' : '<span class="faded">&laquo;</span>');
+		$paginationLinks['previous'] = (($page > 1) ? '<a href="' . ($page == 2 ? $linkFormatPage1 : sprintf ($linkFormat, ($page - 1))) . '">&lt;</a>' : '<span class="faded">&lt;</span>');
 		$paginationLinks['root'] = $jumplist;
-		$paginationLinks['next'] = (($page < $totalPages) ? "<a href=\"page" . ($page + 1) . ".html{$queryString}\">&gt;</a>" : '<span class="faded">&gt;</span>');
-		$paginationLinks['end'] = (($page != $totalPages) ? "<a href=\"page{$totalPages}.html{$queryString}\">&raquo;</a>" : '<span class="faded">&raquo;</span>');
+		$paginationLinks['next'] = (($page < $totalPages) ? '<a href="' . sprintf ($linkFormat, ($page + 1)) . '">&gt;</a>' : '<span class="faded">&gt;</span>');
+		$paginationLinks['end'] = (($page != $totalPages) ? '<a href="' . sprintf ($linkFormat, $totalPages) . '">&raquo;</a>' : '<span class="faded">&raquo;</span>');
 		
 		# Compile the HTML
 		$html = application::htmlUl ($paginationLinks, 0, $ulClass, true, false, false, $liClass = true);
