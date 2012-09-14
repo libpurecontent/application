@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.30
+ * Version 1.3.31
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -720,6 +720,29 @@ class application
 				}
 			}
 		}
+	}
+	
+	
+	# Function to construct a string (from a simple array) as 'A, B, and C' rather than 'A, B, C'
+	public function commaAndListing ($list)
+	{
+		# If there is more than one item, extract the last item
+		$totalItems = count ($list);
+		$moreThanOneItem = ($totalItems > 1);
+		if ($moreThanOneItem) {
+			$lastItem = array_pop ($list);
+		}
+		
+		# Implode the remaining item(s) in the list
+		$string = implode (', ', $list);
+		
+		# Add on the last item if it exists
+		if ($moreThanOneItem) {
+			$string .= ' and ' . $lastItem;
+		}
+		
+		# Return the string
+		return $string;
 	}
 	
 	
@@ -2214,16 +2237,19 @@ class application
 	}
 	
 	
-	# Helper function to convert a list of pipe-surrounded tokens to a uniqued list, e.g. array('|a|b|','|c|') becomes array ('a','b','c'); in lookup mode, retain the originals as the keys and provide a list instead
-	public function splitCombinedTokenList ($data, $lookupMode = false, $separator = '|')
+	# Helper function to convert a list of, or string containing, pipe-surrounded tokens to a uniqued list, e.g. array('|a|b|','|c|') becomes array ('a','b','c'); if a value has no separator, this will be returned as a single-value array; in lookup mode, retain the originals as the keys and provide a list instead
+	public function splitCombinedTokenList ($data, $separator = '|', $lookupMode = false)
 	{
-		# End if no data
-		if (!$data) {return array ();}
+		# End if an empty array or zero-length string; this will not corrupt string "0"
+		if ($data == array () || (is_string ($data) && !strlen ($data))) {return array ();}
+		
+		# If a string, convert to an array
+		if (is_string ($data)) {$data = array ($data);}
 		
 		# Extract each item
 		$list = array ();
 		foreach ($data as $item) {
-			$tokens = explode ($separator, trim ($item));
+			$tokens = explode ($separator, trim ($item));	// Will ensure that a value of 'foo' (rather than '|foo|') still enters the result list
 			foreach ($tokens as $token) {
 				$token = trim ($token);
 				if ($token == $separator || !strlen ($token)) {continue;}
@@ -2348,9 +2374,9 @@ class application
 		$linkFormatPage1 = $baseLink . ($queryString ? '?' . htmlspecialchars ($queryString) : '');
 		
 		# Create a jumplist
-		$current = ($page == 1 ? $linkFormatPage1 : sprintf ($linkFormat, $page));
+		$current = ($page == 1 ? $linkFormatPage1 : preg_replace ('/%s/', $page, $linkFormat, 1));	// Use of preg_replace here is replacement for sprintf: safely ignores everything after the first %s, using the limit=1 technique as per http://stackoverflow.com/questions/4863863
 		for ($i = 1; $i <= $totalPages; $i++) {
-			$link = ($i == 1 ? $linkFormatPage1 : sprintf ($linkFormat, $i));
+			$link = ($i == 1 ? $linkFormatPage1 : preg_replace ('/%s/', $i, $linkFormat, 1));
 			$pages[$link] = "Page {$i} <span class=\"faded\">of {$totalPages}</span>";
 		}
 		$jumplist = pureContent::htmlJumplist ($pages, $current, $baseLink, $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = '');
@@ -2358,10 +2384,10 @@ class application
 		# Create pagination HTML
 		$paginationLinks['introduction'] = 'Switch page: ';
 		$paginationLinks['start'] = (($page != 1) ? '<a href="' . $linkFormatPage1 . '">&laquo;</a>' : '<span class="faded">&laquo;</span>');
-		$paginationLinks['previous'] = (($page > 1) ? '<a href="' . ($page == 2 ? $linkFormatPage1 : sprintf ($linkFormat, ($page - 1))) . '">&lt;</a>' : '<span class="faded">&lt;</span>');
+		$paginationLinks['previous'] = (($page > 1) ? '<a href="' . ($page == 2 ? $linkFormatPage1 : preg_replace ('/%s/', ($page - 1), $linkFormat, 1)) . '">&lt;</a>' : '<span class="faded">&lt;</span>');
 		$paginationLinks['root'] = $jumplist;
-		$paginationLinks['next'] = (($page < $totalPages) ? '<a href="' . sprintf ($linkFormat, ($page + 1)) . '">&gt;</a>' : '<span class="faded">&gt;</span>');
-		$paginationLinks['end'] = (($page != $totalPages) ? '<a href="' . sprintf ($linkFormat, $totalPages) . '">&raquo;</a>' : '<span class="faded">&raquo;</span>');
+		$paginationLinks['next'] = (($page < $totalPages) ? '<a href="' . preg_replace ('/%s/', ($page + 1), $linkFormat, 1) . '">&gt;</a>' : '<span class="faded">&gt;</span>');
+		$paginationLinks['end'] = (($page != $totalPages) ? '<a href="' . preg_replace ('/%s/', $totalPages, $linkFormat, 1) . '">&raquo;</a>' : '<span class="faded">&raquo;</span>');
 		
 		# Compile the HTML
 		$html = application::htmlUl ($paginationLinks, 0, $ulClass, true, false, false, $liClass = true);
