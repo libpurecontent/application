@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.31
+ * Version 1.3.32
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1111,8 +1111,8 @@ class application
 	#!# Consider a more advanced solution like www.linuxjournal.com/article/9585 which is more RFC-compliant
 	function validEmail ($email, $domainPartOnly = false)
 	{
-		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php
-		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[-_a-z0-9\$\+]+(\.[-_a-z0-9\$\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
+		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php but with ' added to local part
+		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[\'-_a-z0-9\$\+]+(\.[\'-_a-z0-9\$\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
 		
 		# If not an array, perform the check and return the result
 		if (!is_array ($email)) {
