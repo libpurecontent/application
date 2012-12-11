@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.3.32
+ * Version 1.4.0
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -136,7 +136,7 @@ class application
 	
 	
 	# Function to send an HTTP header such as a 404; note that output buffering must have been switched on at server level
-	function sendHeader ($statusCode, $url = false, $redirectMessage = false)
+	function sendHeader ($statusCode /* or keyword 'refresh' */, $url = false, $redirectMessage = false)
 	{
 		# Determine whether to use a redirect message
 		if ($redirectMessage) {
@@ -2333,67 +2333,6 @@ class application
 		
 		# Return the list
 		return $finalised;
-	}
-	
-	
-	# Function to enable pagination - based on www.phpnoise.com/tutorials/9/1
-	function getPagerData ($items, $limitPerPage, $page)
-	{
-		# Take the number of items
-		$items = (int) $items;
-		
-		# Ensure the limit is at least 1
-		$limitPerPage = max ((int) $limitPerPage, 1);
-		
-		# Ensure the page is at least 1
-		$page = max ((int) $page, 1);
-		
-		# Get the total number of pages (items divided by the number of pages, rounded up to catch the last (potentially incomplete) page)
-		$totalPages = ceil ($items / $limitPerPage);
-		
-		# Ensure the page is no more than the number of pages
-		$page = min ($page, $totalPages);
-		
-		# Define the offset, taking page 1 (rather than 0) as the first page
-		$offset = ($page - 1) * $limitPerPage;
-		if ($offset < 0) {$offset = 0;}	// Prevent a negative offset if the page is 0 (i.e. due to no results)
-		
-		# Return the result
-		return array ($totalPages, $offset, $items, $limitPerPage, $page);
-	}
-	
-	
-	# Pagination links
-	public function paginationLinks ($page, $totalPages, $baseLink, $queryString = '' /* i.e. the complete string, e.g. foo=bar&person=john */, $ulClass = 'paginationlinks', $pageInQueryString = false)
-	{
-		# Avoid creating pagination if there is only one page
-		if ($totalPages == 1) {return '';}
-		
-		# Determine a pattern for the link, and a special-case link for page 1 (which has no page number added)
-		$linkFormat = $baseLink . ($pageInQueryString ? '?page=%s' . ($queryString ? '&amp;' . htmlspecialchars ($queryString) : '') : 'page%s.html' . ($queryString ? '?' . htmlspecialchars ($queryString) : ''));
-		$linkFormatPage1 = $baseLink . ($queryString ? '?' . htmlspecialchars ($queryString) : '');
-		
-		# Create a jumplist
-		$current = ($page == 1 ? $linkFormatPage1 : preg_replace ('/%s/', $page, $linkFormat, 1));	// Use of preg_replace here is replacement for sprintf: safely ignores everything after the first %s, using the limit=1 technique as per http://stackoverflow.com/questions/4863863
-		for ($i = 1; $i <= $totalPages; $i++) {
-			$link = ($i == 1 ? $linkFormatPage1 : preg_replace ('/%s/', $i, $linkFormat, 1));
-			$pages[$link] = "Page {$i} <span class=\"faded\">of {$totalPages}</span>";
-		}
-		$jumplist = pureContent::htmlJumplist ($pages, $current, $baseLink, $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = '');
-		
-		# Create pagination HTML
-		$paginationLinks['introduction'] = 'Switch page: ';
-		$paginationLinks['start'] = (($page != 1) ? '<a href="' . $linkFormatPage1 . '">&laquo;</a>' : '<span class="faded">&laquo;</span>');
-		$paginationLinks['previous'] = (($page > 1) ? '<a href="' . ($page == 2 ? $linkFormatPage1 : preg_replace ('/%s/', ($page - 1), $linkFormat, 1)) . '">&lt;</a>' : '<span class="faded">&lt;</span>');
-		$paginationLinks['root'] = $jumplist;
-		$paginationLinks['next'] = (($page < $totalPages) ? '<a href="' . preg_replace ('/%s/', ($page + 1), $linkFormat, 1) . '">&gt;</a>' : '<span class="faded">&gt;</span>');
-		$paginationLinks['end'] = (($page != $totalPages) ? '<a href="' . preg_replace ('/%s/', $totalPages, $linkFormat, 1) . '">&raquo;</a>' : '<span class="faded">&raquo;</span>');
-		
-		# Compile the HTML
-		$html = application::htmlUl ($paginationLinks, 0, $ulClass, true, false, false, $liClass = true);
-		
-		# Return the HTML
-		return $html;
 	}
 	
 	
