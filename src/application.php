@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.4.0
+ * Version 1.4.1
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2289,6 +2289,57 @@ class application
 		
 		# Return the cleaned data cell
 		return $data;
+	}
+	
+	
+	# Function to provide a preference type switcher
+	public function preferenceSwitcher (&$preferenceSwitcherHtml = '', $preferenceTypes = array (), $id = 'listingtypeswitcher')
+	{
+		/* 
+		# Requires an array of modes, e.g.
+		$listingTypes = array (
+			'listing'	=> 'application_view_columns',
+			'records'	=> 'application_tile_vertical',
+		);
+		*/
+		
+		# End if no modes set
+		if (!$preferenceTypes) {return false;}
+		
+		# Start the HTML for the record listing
+		$preferenceSwitcherHtml = '';
+		
+		# Create the icons, with links for each
+		$currentPage = htmlspecialchars ($_SERVER['SCRIPT_URL']);
+		
+		# Define the modes
+		$parameter = 'viewmode';
+		$choices = array ();
+		foreach ($preferenceTypes as $mode => $icon) {
+			$choices[$mode] = "<a href=\"{$currentPage}?{$parameter}={$mode}\" rel=\"nofollow\"><img src=\"/images/icons/{$icon}.png\" class=\"icon\" title=\"" . htmlspecialchars (ucfirst ($mode) . ' mode') . "\" /></a>";
+		}
+		$default = key ($choices);
+		
+		# If a requested type has been selected, set a cookie for the requested type, and redirect to the same URL but without the query string
+		$requested = ((isSet ($_GET[$parameter]) && array_key_exists ($_GET[$parameter], $choices)) ? $_GET[$parameter] : false);
+		if ($requested) {
+			$thirtyDays = 7 * 24 * 60 * 60;
+			setcookie ($parameter, $requested, time () + $thirtyDays, $this->baseUrl . '/', $_SERVER['SERVER_NAME']);
+			$preferenceSwitcherHtml = application::sendHeader (301, $_SERVER['SCRIPT_URL'], $redirectMessage = true);
+			return $preferenceSwitcherHtml;
+		}
+		
+		# Read the cookie
+		$selected = ((isSet ($_COOKIE[$parameter]) && array_key_exists ($_COOKIE[$parameter], $choices)) ? $_COOKIE[$parameter] : $default);
+		
+		# Compile the HTML, highlighting the selected type
+		$preferenceSwitcherHtml = application::htmlUl ($choices, 0, 'inline', true, false, false, false, $selected);
+		
+		# Surround with a div
+		$preferenceSwitcherHtml = "\n<div id=\"{$id}\">" . $preferenceSwitcherHtml . "\n</div>";
+		
+		# Return the selection
+		return $selected;
 	}
 	
 	
