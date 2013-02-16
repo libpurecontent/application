@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.4.1
+ * Version 1.4.2
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -143,6 +143,7 @@ class application
 			if ($redirectMessage === true) {	// Convert (bool)true to a default string
 				$redirectMessage = "\n" . '<p><a href="%s">Click here to continue to the next page.</a></p>';
 			}
+			#!# If using 'refresh' this will be invalid
 			$redirectMessage = sprintf ($redirectMessage, $url);
 		}
 		
@@ -2605,6 +2606,113 @@ class application
 		
 		# Return the value
 		return $string;
+	}
+	
+	
+	# Function to unzip a zip file
+	function unzip ($file, $directory, $deleteAfterUnzipping = true, $archiveOverwritableFiles = true, $expectTotal = false, $expectTotalForcedFilenames = array ())
+	{
+		# Open the zip
+		if (!$zip = @zip_open ($directory . $file)) {return false;}
+		
+		# Loop through each file
+		$unzippedFiles = array ();
+		while ($zipEntry = zip_read ($zip)) {
+			if (!zip_entry_open ($zip, $zipEntry, 'r')) {continue;}
+			
+			# Read the contents
+			$contents = zip_entry_read ($zipEntry, zip_entry_filesize ($zipEntry));
+			
+			# Determine the zip entry name
+			$zipEntryName = zip_entry_name ($zipEntry);
+			
+			# Ensure the directory exists
+			$targetDirectory = dirname ($directory . $zipEntryName) . '/';
+			if (!is_dir ($targetDirectory)) {
+				umask (0);
+				if (!mkdir ($targetDirectory, $this->settings['directoryPermissions'], true)) {
+					$deleteAfterUnzipping = false;	// Don't delete the source file if this fails
+					continue;
+				}
+			}
+			
+			# Skip if the entry itself is a directory (the contained file will have a directory created for it)
+			if (substr ($zipEntryName, -1) == '/') {continue;}
+			
+			# Archive (by appending a timestamp) an existing file if it exists and is different
+			$filename = $directory . $zipEntryName;
+			$originalIsRenamed = false;
+			if ($archiveOverwritableFiles && file_exists ($filename)) {
+				if (md5_file ($filename) != md5 ($contents)) {
+					$timestamp = date ('Ymd-His');
+					# Rename the file, altering the filename reference (using .= )
+					$originalIsRenamed = $filename;
+					#!# Error here - seems to rename the new rather than the original
+					rename ($filename, $filename .= '.replaced-' . $timestamp);
+				}
+			}
+			
+			# (Over-)write the new file
+			file_put_contents ($filename, $contents);
+			
+			# Close the zip entry
+			zip_entry_close ($zipEntry);
+			
+			# Assign the files to the master array, emulating a native upload
+			$baseFilename = basename ($filename);
+			$unzippedFiles[$baseFilename] = array (
+				'name' => $baseFilename,
+				'type' => (function_exists ('finfo_file') ? finfo_file (finfo_open (FILEINFO_MIME), $filename) : NULL),	// finfo_file is unfortunately a replacement for mime_content_type which is now deprecated
+				'tmp_name' => $file,
+				'size' => filesize ($filename),
+				'_location' => $filename,
+			);
+			
+			# If the original has been renamed, add that
+			if ($originalIsRenamed) {
+				$unzippedFiles[$baseFilename]['original'] = basename ($originalIsRenamed);
+			}
+		}
+		
+		# Close the zip
+		zip_close ($zip);
+		
+		# Return false if an expected total is required
+		if ($expectTotal) {
+			if (count ($unzippedFiles) != $expectTotal) {
+				return false;
+			}
+		}
+		
+		# Delete the submitted file if required
+		if ($deleteAfterUnzipping) {
+			unlink ($directory . $file);
+		}
+		
+		# Natsort by key
+		$unzippedFiles = self::knatsort ($unzippedFiles);
+		
+		# Force the filenames if specified, in the list order
+		if ($expectTotal && $expectTotalForcedFilenames) {
+			if (is_string ($expectTotalForcedFilenames)) {
+				$expectTotalForcedFilenames = array ($expectTotalForcedFilenames);
+			}
+			$i = 0;
+			$unzippedFilesMoved = array ();
+			foreach ($unzippedFiles as $unzippedFile => $attributes) {
+				$newFilename = $expectTotalForcedFilenames[$i];
+				$moveTo = $directory . $newFilename;
+				rename ($attributes['_location'], $moveTo);
+				$attributes['name'] = $newFilename;	// Overwrite the local name
+				$attributes['_location'] = $moveTo;	// Overwrite the full path
+				$unzippedFilesMoved[$newFilename] = $attributes;	// Register with the new filename as the key
+				$i++;
+			}
+			$unzippedFiles = $unzippedFilesMoved;
+		}
+		
+		# Sort and return the list of unzipped files
+		return $unzippedFiles;
 	}
 	
 	
