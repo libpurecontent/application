@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-12
- * Version 1.4.2
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
+ * Version 1.4.3
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -225,7 +225,10 @@ class application
 		if (is_array ($data)) {
 			$data = print_r ($data, true);
 		}
-		if ($htmlspecialchars) {$data = htmlspecialchars ($data);}
+		if ($htmlspecialchars) {
+			if (!defined ('ENT_SUBSTITUTE')) {define ('ENT_SUBSTITUTE', 8);}	// See http://hakre.wordpress.com/2011/08/31/substitutes-for-php-5-4s-htmlspecialchars/ and http://www.php.net/htmlspecialchars#106188
+			$data = htmlspecialchars ($data, ENT_QUOTES | ENT_SUBSTITUTE);
+		}
 		$html .= $data;
 		$html .= "\n</pre>";
 		if ($hide) {$html .= "\n-->";}
