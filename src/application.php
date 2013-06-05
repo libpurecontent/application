@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
- * Version 1.4.3
+ * Version 1.5.0
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -17,7 +17,7 @@ require_once ('pureContent.php');
 class application
 {
 	# Constructor
-	function application ($applicationName, $errors, $administratorEmail)
+	public function __construct ($applicationName, $errors, $administratorEmail)
 	{
 		# Make inputs global
 		$this->applicationName = $applicationName;
@@ -27,7 +27,7 @@ class application
 	
 	
 	# Function to merge the arguments; note that $errors returns the errors by reference and not as a result from the method
-	function assignArguments (&$errors, $suppliedArguments, $argumentDefaults, $functionName, $subargument = NULL, $handleErrors = false)
+	public static function assignArguments (&$errors, $suppliedArguments, $argumentDefaults, $functionName, $subargument = NULL, $handleErrors = false)
 	{
 		# Merge the defaults: ensure that arguments with a non-null default value are set (throwing an error if not), or assign the default value if none is specified
 		$arguments = array ();
@@ -64,7 +64,7 @@ class application
 		# Handle the errors directly if required if any arise
 		if ($handleErrors) {
 			if ($errors) {
-				echo application::showUserErrors ($errors);
+				echo self::showUserErrors ($errors);
 				return false;
 			}
 		}
@@ -75,14 +75,14 @@ class application
 	
 	
 	# Function to deal with errors
-	function throwError ($number, $diagnosisDetails = '')
+	public function throwError ($number, $diagnosisDetails = '')
 	{
 		# Define the default error message if the specified error number does not exist
 		$errorMessage = (isSet ($this->errors[$number]) ? $this->errors[$number] : "A strange yet unknown error (#$number) has occurred.");
 		
 		# Show the error message
 		$userErrors[] = 'Error: ' . $errorMessage . ' The administrator has been notified of this problem.';
-		echo application::showUserErrors ($userErrors);
+		echo self::showUserErrors ($userErrors);
 		
 		# Assemble the administrator's error message
 		if ($diagnosisDetails != '') {$errorMessage .= "\n\nFurther information available: " . $diagnosisDetails;}
@@ -90,15 +90,15 @@ class application
 		# Mail the admininistrator
 		$subject = '[' . ucfirst ($this->applicationName) . '] error';
 		$message = 'The ' . $this->applicationName . " has an application error: please investigate. Diagnostic details are given below.\n\nApplication error $number:\n" . $errorMessage;
-		application::sendAdministrativeAlert ($this->administratorEmail, $this->applicationName, $subject, $message);
+		self::sendAdministrativeAlert ($this->administratorEmail, $this->applicationName, $subject, $message);
 	}
 	
 	
 	# Generalised support function to display errors
-	function showUserErrors ($errors, $parentTabLevel = 0, $heading = '', $nested = false)
+	public static function showUserErrors ($errors, $parentTabLevel = 0, $heading = '', $nested = false)
 	{
 		# Convert the error(s) to an array if it is not already
-		$errors = application::ensureArray ($errors);
+		$errors = self::ensureArray ($errors);
 		
 		# Build up a list of errors if there are any
 		$html = '';
@@ -119,7 +119,7 @@ class application
 	
 	
 	# Function to get the base URL (non-slash terminated)
-	function getBaseUrl ()
+	public static function getBaseUrl ()
 	{
 		# Obtain the value
 		$baseUrl = dirname (substr ($_SERVER['SCRIPT_FILENAME'], strlen ($_SERVER['DOCUMENT_ROOT'])));
@@ -136,7 +136,7 @@ class application
 	
 	
 	# Function to send an HTTP header such as a 404; note that output buffering must have been switched on at server level
-	function sendHeader ($statusCode /* or keyword 'refresh' */, $url = false, $redirectMessage = false)
+	public static function sendHeader ($statusCode /* or keyword 'refresh' */, $url = false, $redirectMessage = false)
 	{
 		# Determine whether to use a redirect message
 		if ($redirectMessage) {
@@ -183,13 +183,13 @@ class application
 	
 	
 	# Function to set a flash message
-	public function setFlashMessage ($name, $value, $redirectTo, $redirectMessage = false, $path = '/')
+	public static function setFlashMessage ($name, $value, $redirectTo, $redirectMessage = false, $path = '/')
 	{
 		# Set the cookie
 		setcookie ("flashredirect_{$name}", $value, time () + (60*5), $path);
 		
 		# Redirect to the specified location
-		$html = application::sendHeader (301, $_SERVER['_SITE_URL'] . $redirectTo, $redirectMessage);
+		$html = self::sendHeader (301, $_SERVER['_SITE_URL'] . $redirectTo, $redirectMessage);
 		
 		# Return the HTML which will be displayed as the fallback
 		return $html;
@@ -197,7 +197,7 @@ class application
 	
 	
 	# Function to get a flash message
-	public function getFlashMessage ($name, $path = '/')
+	public static function getFlashMessage ($name, $path = '/')
 	{
 		# End if there is no such cookie
 		if (!isSet ($_COOKIE["flashredirect_{$name}"])) {return false;}
@@ -214,7 +214,7 @@ class application
 	
 	
 	# Generalised support function to allow quick dumping of form data to screen, for debugging purposes
-	function dumpData ($data, $hide = false, $return = false, $htmlspecialchars = true)
+	public static function dumpData ($data, $hide = false, $return = false, $htmlspecialchars = true)
 	{
 		# Start the HTML
 		$html = '';
@@ -243,10 +243,10 @@ class application
 	
 	
 	# Function to present an array with arrows (like print_r but better formatted)
-	function printArray ($array)
+	public static function printArray ($array)
 	{
 		# If the input is not an array, convert it
-		$array = application::ensureArray ($array);
+		$array = self::ensureArray ($array);
 		
 		# Loop through each item
 		$hash = array ();
@@ -264,10 +264,10 @@ class application
 	
 	
 	# Function to check whether all elements of an array are empty
-	function allArrayElementsEmpty ($array)
+	public static function allArrayElementsEmpty ($array)
 	{
 		# Ensure the variable is an array if not already
-		$array = application::ensureArray ($array);
+		$array = self::ensureArray ($array);
 		
 		# Return false if a non-empty value is found
 		foreach ($array as $key => $value) {
@@ -283,7 +283,7 @@ class application
 	
 	
 	# Generalised support function to ensure a variable is an array
-	function ensureArray ($variable)
+	public static function ensureArray ($variable)
 	{
 		# If the initial value is empty, convert it to an empty array
 		if ($variable == '') {$variable = array ();}
@@ -301,7 +301,7 @@ class application
 	
 	
 	# Function to check whether an array is associative, i.e. whether any keys are not numeric
-	function isAssociativeArray ($array)
+	public static function isAssociativeArray ($array)
 	{
 		# Return false if not an array
 		if (!is_array ($array)) {return false;}
@@ -321,7 +321,7 @@ class application
 	
 	
 	# Function to determine if an array is multidimensional; returns 1 if all are multidimensional, 0 if not at all, -1 if mixed
-	function isMultidimensionalArray ($array)
+	public static function isMultidimensionalArray ($array)
 	{
 		# Return NULL if not an array
 		if (!is_array ($array)) {return NULL;}
@@ -345,7 +345,7 @@ class application
 	
 	
 	# Iterative function to ensure a hierarchy of values (for either a simple array or a one-level multidimensional array) is arranged associatively
-	function ensureValuesArrangedAssociatively ($originalValues, $forceAssociative, $canIterateFurther = true)
+	public static function ensureValuesArrangedAssociatively ($originalValues, $forceAssociative, $canIterateFurther = true)
 	{
 		# Loop through each value and determine whether the non-multidimensional elements should be treated as associative or not
 		$scalars = array ();
@@ -354,7 +354,7 @@ class application
 				$scalars[$key] = $value;
 			}
 		}
-		$scalarsAreAssociative = ($forceAssociative || application::isAssociativeArray ($scalars));
+		$scalarsAreAssociative = ($forceAssociative || self::isAssociativeArray ($scalars));
 		
 		# Loop through each value
 		$values = array ();
@@ -371,7 +371,7 @@ class application
 			} else {
 				
 				# For an array, iterate to obtain the values, carrying back any thrown error
-				if (!$value = application::ensureValuesArrangedAssociatively ($value, $forceAssociative, false)) {
+				if (!$value = self::ensureValuesArrangedAssociatively ($value, $forceAssociative, false)) {
 					return false;
 				}
 			}
@@ -387,7 +387,7 @@ class application
 	
 	# Function to flatten a one-level multidimensional array
 	#!# This could be made properly iterative
-	function flattenMultidimensionalArray ($values)
+	public static function flattenMultidimensionalArray ($values)
 	{
 		# Arrange the values as a simple associative array
 		foreach ($values as $key => $value) {
@@ -407,7 +407,7 @@ class application
 	
 	/*
 	# Function to get the longest key name length in an array
-	function longestKeyNameLength ($array)
+	public static function longestKeyNameLength ($array)
 	{
 		# Assign 0 as the initial longest length
 		$longestLength = 0;
@@ -427,7 +427,7 @@ class application
 	
 	
 	# Trucation algorithm
-	function str_truncate ($string, $characters, $moreUrl, $override = '<!--more-->', $respectWordBoundaries = true)
+	public static function str_truncate ($string, $characters, $moreUrl, $override = '<!--more-->', $respectWordBoundaries = true)
 	{
 		# End false if $characters is non-numeric or zero
 		if (!$characters || !is_numeric ($characters)) {return false;}
@@ -474,7 +474,7 @@ class application
 	
 	
 	# String highlighting, based on http://aidanlister.com/repos/v/function.str_highlight.php
-	function str_highlight ($text, $needle, $forceWordBoundaryIfNo = false)
+	public static function str_highlight ($text, $needle, $forceWordBoundaryIfNo = false)
 	{
 		# Default highlighting
 		$highlight = '<strong>\1</strong>';
@@ -503,7 +503,7 @@ class application
 	
 	
 	# Function to return the start,previous,next,end items in an array
-	function getPositions ($keys, $item)
+	public static function getPositions ($keys, $item)
 	{
 		# Reindex the keys
 		$new = array ();
@@ -545,20 +545,20 @@ class application
 	
 	
 	# Function to ksort an array recursively
-	function ksortRecursive (&$array)
+	public static function ksortRecursive (&$array)
 	{
 		ksort ($array);
 		$keys = array_keys ($array);
 		foreach ($keys as $key) {
 			if (is_array ($array[$key])) {
-				application::ksortRecursive ($array[$key]);
+				self::ksortRecursive ($array[$key]);
 			}
 		}
 	}
 	
 	
 	# Function to natsort an array by key; note that this does not return by reference (unlike natsort)
-	function knatsort ($array)
+	public static function knatsort ($array)
 	{
 		$keys = array_keys ($array);
 		natsort ($keys);
@@ -573,7 +573,7 @@ class application
 	
 	
 	# Function to natsort an array by key; note that this does not return by reference (unlike natsort)
-	function natsortField ($array, $fieldname)
+	public static function natsortField ($array, $fieldname)
 	{
 		# Create a function which creates an array of the two values, then compares the original array with a natsorted copy
 		$functionCode = '
@@ -593,7 +593,7 @@ class application
 	
 	
 	# Function to perform resorting with a start list
-	function resortStartOrder ($list, $startOrder)
+	public static function resortStartOrder ($list, $startOrder)
 	{
 		# Return what is supplied if the list is not an array
 		if (!is_array ($list) || empty ($list)) {return $list;}
@@ -620,7 +620,7 @@ class application
 	
 	
 	# Function to trim all values in an array; recursive values are also handled
-	function arrayTrim ($array, $trimKeys = false)
+	public static function arrayTrim ($array, $trimKeys = false)
 	{
 		# Return the value if not an array
 		if (!is_array ($array)) {return $array;}
@@ -630,7 +630,7 @@ class application
 		foreach ($array as $key => $value) {
 			
 			# Deal with recursive arrays
-			if (is_array ($value)) {$value = application::arrayTrim ($value);}
+			if (is_array ($value)) {$value = self::arrayTrim ($value);}
 			
 			# Trim the key if requested
 			if ($trimKeys) {$key = trim ($key);}
@@ -645,13 +645,13 @@ class application
 	
 	
 	# Function to return only the specified fields of an existing array
-	function arrayFields ($array, $fields)
+	public static function arrayFields ($array, $fields)
 	{
 		# Return unamended if not an array
 		if (!is_array ($array)) {return $array;}
 		
 		# Ensure the fields are an array
-		$fields = application::ensureArray ($fields);
+		$fields = self::ensureArray ($fields);
 		
 		# Loop through the array and extract only the wanted fields
 		$filteredArray = array ();
@@ -667,13 +667,13 @@ class application
 	
 	
 	# Function to filter an array by a list of keys
-	function array_filter_keys ($array, $keys)
+	public static function array_filter_keys ($array, $keys)
 	{
 		# Return unamended if not an array
 		if (!is_array ($array)) {return $array;}
 		
 		# Ensure the keys list is an array
-		$keys = application::ensureArray ($keys);
+		$keys = self::ensureArray ($keys);
 		
 		# Add those values of the $array whose key is in $keys
 		$result = array ();
@@ -689,7 +689,7 @@ class application
 	
 	
 	# Function to return the duplicate values in an array
-	function array_duplicate_values ($array)
+	public static function array_duplicate_values ($array)
 	{
 		$checkKeysUniqueComparison = create_function ('$value', 'if ($value > 1) return true;');
 		$result = array_keys (array_filter (array_count_values ($array), $checkKeysUniqueComparison));
@@ -698,7 +698,7 @@ class application
 	
 	
 	# Function to get the name of the nth key in an array (first is 1, not 0)
-	function arrayKeyName ($array, $number = 1, $multidimensional = false)
+	public static function arrayKeyName ($array, $number = 1, $multidimensional = false)
 	{
 		# Convert to multidimensional if not already
 		if (!$multidimensional) {
@@ -728,7 +728,7 @@ class application
 	
 	
 	# Function to construct a string (from a simple array) as 'A, B, and C' rather than 'A, B, C'
-	public function commaAndListing ($list)
+	public static function commaAndListing ($list)
 	{
 		# If there is more than one item, extract the last item
 		$totalItems = count ($list);
@@ -751,7 +751,7 @@ class application
 	
 	
 	# Function to return a correctly supplied URL value
-	function urlSuppliedValue ($urlArgumentKey, $available)
+	public static function urlSuppliedValue ($urlArgumentKey, $available)
 	{
 		# If the $urlArgumentKey is defined in the URL and it exists in the list of available items, return its value
 		if (isSet ($_GET[$urlArgumentKey])) {
@@ -766,7 +766,7 @@ class application
 	
 	
 	# Function to clean up text
-	function cleanText ($record, $entityConversion = true)
+	public static function cleanText ($record, $entityConversion = true)
 	{
 		# Define conversions
 		$convertFrom = "\x82\x83\x84\x85\x86\x87\x89\x8a\x8b\x8c\x8e\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f";
@@ -791,18 +791,18 @@ class application
 	
 	
 	# Function to convert the character set, mainly intended for ISO-8859-1 to UTF-8 conversions, with string/array/multi-dimensional-array (including array key conversion) support
-	function convertToCharset ($variable, $outputCharset = 'UTF-8', $convertKeys = true)
+	public static function convertToCharset ($variable, $outputCharset = 'UTF-8', $convertKeys = true)
 	{
 		# If the value is a scalar, convert directly and return
 		if (!is_array ($variable)) {
-			return application::convertToCharset_scalar ($variable, $outputCharset);
+			return self::convertToCharset_scalar ($variable, $outputCharset);
 		}
 		
 		# Loop through the array and convert both key and value to entity-safe characters
 		$cleanedArray = array ();
 		foreach ($variable as $key => $value) {
-			if ($convertKeys) {$key = application::convertToCharset ($key, $outputCharset);}
-			$value = application::convertToCharset ($value);
+			if ($convertKeys) {$key = self::convertToCharset ($key, $outputCharset);}
+			$value = self::convertToCharset ($value);
 			$cleanedArray[$key] = $value;
 		}
 		
@@ -813,7 +813,7 @@ class application
 	
 	
 	# Function wrapped by convertToCharset
-	/* private */ function convertToCharset_scalar ($string, $outputCharset = 'UTF-8', $iconvIgnore = true)
+	public static function convertToCharset_scalar ($string, $outputCharset = 'UTF-8', $iconvIgnore = true)
 	{
 		# End if iconv support is not available
 		if (!function_exists ('iconv')) {return $string;}
@@ -853,7 +853,7 @@ class application
 	
 	
 	# Function to format free text
-	function formatTextBlock ($text, $paragraphClass = NULL)
+	public static function formatTextBlock ($text, $paragraphClass = NULL)
 	{
 		# Do nothing if the text is empty
 		if (!strlen ($text)) {return $text;}
@@ -875,7 +875,7 @@ class application
 	
 	
 	# Generic function to convert a box with URL[whitespace]description lines to a list
-	function urlReferencesBox ($string)
+	public static function urlReferencesBox ($string)
 	{
 		# Loop through each line
 		$lines = explode ("\n", $string);
@@ -892,7 +892,7 @@ class application
 		}
 		
 		# Compile the list
-		$html  = application::htmlUl ($list);
+		$html  = self::htmlUl ($list);
 		
 		# Return the HTML
 		return $html;
@@ -900,7 +900,7 @@ class application
 	
 	
 	# Function to rawurlencode a path but leave the / slash characters in tact
-	function rawurlencodePath ($path)
+	public static function rawurlencodePath ($path)
 	{
 		# Do the encoding
 		$encoded = implode ('/', array_map ('rawurlencode', explode ('/', $path)));
@@ -911,7 +911,7 @@ class application
 	
 	
 	# Function to format a minimised URL (e.g. www.site.com/subdirectory rather than http://www.site.com/subdirectory/)
-	function urlPresentational ($url)
+	public static function urlPresentational ($url)
 	{
 		# Trim whitespace
 		$url = trim ($url);
@@ -933,7 +933,7 @@ class application
 	
 	
 	# Function to send administrative alerts
-	function sendAdministrativeAlert ($administratorEmail, $applicationName, $subject, $message, $cc = false)
+	public static function sendAdministrativeAlert ($administratorEmail, $applicationName, $subject, $message, $cc = false)
 	{
 		# Define standard e-mail headers
 		$mailheaders = "From: {$applicationName} <" . $administratorEmail . ">\n";
@@ -945,14 +945,14 @@ class application
 	
 	
 	# Function to e-mail changes between two arrays
-	function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false)
+	public static function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false)
 	{
 		# End if no changes
-		if (!$changedFields = application::array_changed_values_fields ($before, $after)) {return;}
+		if (!$changedFields = self::array_changed_values_fields ($before, $after)) {return;}
 		
 		# Report changes to the administrator for info
-		$beforeChanged = application::arrayFields ($before, $changedFields);
-		$afterChanged = application::arrayFields ($after, $changedFields);
+		$beforeChanged = self::arrayFields ($before, $changedFields);
+		$afterChanged = self::arrayFields ($after, $changedFields);
 		
 		# Construct the e-mail message
 		$message  = "\nUser {$changedBy} has amended {$databaseReference}\nwith the following fields being changed:";
@@ -969,7 +969,7 @@ class application
 	
 	
 	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976 ; note that the From/To/Subject headers are only encoded to UTF-8 when they include non-ASCII characters (so that filtering is more likely to work)
-	function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */)
+	public static function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */)
 	{
 		# If the message is text+html, supplied as array('text'=>$text,'html'=>$htmlVersion), set this up; see http://krijnhoetmer.nl/stuff/php/html-plain-text-mail/
 		$isMultipart = false;
@@ -1068,7 +1068,7 @@ class application
 	
 	
 	# Function to show mail that has been sent
-	function showMail ($to, $subject, $message, $extraHeaders, $prefix = 'The message has been sent, as follows:', $divClass = 'graybox')
+	public static function showMail ($to, $subject, $message, $extraHeaders, $prefix = 'The message has been sent, as follows:', $divClass = 'graybox')
 	{
 		# Compile the text, adding headers to the start
 		$text = "{$extraHeaders}\nTo: {$to}\nSubject: {$subject}\n" . $message;
@@ -1085,7 +1085,7 @@ class application
 	
 	
 	# Function to get a list of fields that have changed values (this is not the same as array_diff - see comments on www.php.net/array_diff page)
-	function array_changed_values_fields ($array1, $array2)
+	public static function array_changed_values_fields ($array1, $array2)
 	{
 		# Start an array of changed field names whose value has changed
 		$changedFields = array ();
@@ -1113,7 +1113,7 @@ class application
 	
 	# Function to check that an e-mail address (or all addresses) are valid
 	#!# Consider a more advanced solution like www.linuxjournal.com/article/9585 which is more RFC-compliant
-	function validEmail ($email, $domainPartOnly = false)
+	public static function validEmail ($email, $domainPartOnly = false)
 	{
 		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php but with ' added to local part
 		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[\'-_a-z0-9\$\+]+(\.[\'-_a-z0-9\$\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
@@ -1136,7 +1136,7 @@ class application
 	
 	
 	# Function to check that a list of e-mail addresses (comma-space only by default, in line with HTML5 <input type="email" multiple="multiple" /> but space/semi-colon/comma-separated can be enabled)
-	function emailListStringToArray ($string, $allowSpace = true)
+	public static function emailListStringToArray ($string, $allowSpace = true)
 	{
 		# Determine the match
 		$match = ($allowSpace ? ",\s?" : ',');
@@ -1151,7 +1151,7 @@ class application
 	
 	
 	# Function to provide a mail quoting algorithm
-	function emailQuoting ($message, $quoteString = '> ')
+	public static function emailQuoting ($message, $quoteString = '> ')
 	{
 		# Start an array of lines to hold the quoted message
 		$quotedMessage = array ();
@@ -1174,7 +1174,7 @@ class application
 	
 	
 	# Function to encode an e-mail address
-	function encodeEmailAddress ($email)
+	public static function encodeEmailAddress ($email)
 	{
 		# Return the string
 		return str_replace ('@', '<span>&#64;</span>', $email);
@@ -1184,7 +1184,7 @@ class application
 	# Function to make links clickable: from www.totallyphp.co.uk/code/convert_links_into_clickable_hyperlinks.htm
 	#!# Need to disallow characters such as ;.) at end of links
 	#!# Target could potentially be derived from a regexp instead
-	function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false, $target = '_blank')
+	public static function makeClickableLinks ($text, $addMailto = false, $replaceVisibleUrlWithText = false, $target = '_blank')
 	{
 		$delimiter = '!';
 		$text = preg_replace ($delimiter . '(((ftp|http|https)://)[-a-zA-Z0-9@:%_\+.~#?&//=;]+[-a-zA-Z0-9@:%_\+~#?&//=]+)' . "{$delimiter}i", '<a' . ($target ? " target=\"{$target}\"" : '') . ' href="$1">' . ($replaceVisibleUrlWithText ? $replaceVisibleUrlWithText : '$1') . '</a>', $text);
@@ -1195,7 +1195,7 @@ class application
 	
 	
 	# Function to generate a password
-	function generatePassword ($length = 6, $numeric = false)
+	public static function generatePassword ($length = 6, $numeric = false)
 	{
 		# Generate a numeric password if that is what is required
 		if ($numeric) {
@@ -1217,7 +1217,7 @@ class application
 	
 	
 	# Function to check that a URL-supplied activation key is valid
-	function validPassword ($length = 6)
+	public static function validPassword ($length = 6)
 	{
 		# Check that the URL contains an activation key string of exactly 6 lowercase letters/numbers
 		return (preg_match ('/^[a-z0-9]{' . $length . '}$/D', (trim ($_SERVER['QUERY_STRING']))));
@@ -1226,7 +1226,7 @@ class application
 	
 	# Function to perform a very basic check whether a URL is valid
 	#!# Consider developing this further
-	function urlSyntacticallyValid ($url)
+	public static function urlSyntacticallyValid ($url)
 	{
 		# Return true if the URL is valid following basic checks
 		return preg_match ('/^(ftp|http|https)/i', $url);
@@ -1234,7 +1234,7 @@ class application
 	
 	
 	# Function to determine whether a URL is internal to the site
-	function urlIsInternal ($url)
+	public static function urlIsInternal ($url)
 	{
 		# Return true if the full URL starts with the site URL
 		return preg_match ('/^' . addcslashes ($_SERVER['_SITE_URL'], '/') . '/i', $url);
@@ -1242,7 +1242,7 @@ class application
 	
 	
 	# Function to extract the title of the page in question by opening the first $startingCharacters characters of the file and extracting what's between the <$tag> tags
-	function getTitleFromFileContents ($html, $startingCharacters = 100, $tag = 'h1')
+	public static function getTitleFromFileContents ($html, $startingCharacters = 100, $tag = 'h1')
 	{
 		# Define the starting and closing tags
 		$startingTag = "<{$tag}[^>]*>";
@@ -1266,7 +1266,7 @@ class application
 	
 	
 	# Function to add a class to tags within some HTML, combining with existing classes if present
-	function addClassesToTags ($html, $tag, $class)
+	public static function addClassesToTags ($html, $tag, $class)
 	{
 		# Add a class to each
 		$html = str_replace ("<{$tag}", "<{$tag} class=\"{$class}\"", $html);
@@ -1290,7 +1290,7 @@ class application
 	
 	
 	# Function to dump data from an associative array to a table
-	function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $keyAsFirstColumn = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeyClasses = false, $onlyFields = array (), $compress = false, $showHeadings = true, $encodeEmailAddress = true)
+	public static function htmlTable ($array, $tableHeadingSubstitutions = array (), $class = 'lines', $keyAsFirstColumn = true, $uppercaseHeadings = false, $allowHtml = false, $showColons = false, $addCellClasses = false, $addRowKeyClasses = false, $onlyFields = array (), $compress = false, $showHeadings = true, $encodeEmailAddress = true)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1315,7 +1315,7 @@ class application
 				$data = $array[$key][$valueKey];
 				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) . ((is_array ($addCellClasses) && isSet ($addCellClasses[$valueKey])) ? ' ' . $addCellClasses[$valueKey] : '') : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$cellContents = (!$allowHtml ? htmlspecialchars ($data) : $data);
-				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? application::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? self::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
 		}
@@ -1346,7 +1346,7 @@ class application
 	
 	
 	# Function to create a keyed HTML table; $dlFormat is PRIVATE and should not be used externally
-	function htmlTableKeyed ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $addRowKeyClasses = false, $dlFormat = false)
+	public static function htmlTableKeyed ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $addRowKeyClasses = false, $dlFormat = false)
 	{
 		# Check that the data is an array
 		if (!is_array ($array)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not an array.</p>';}
@@ -1399,14 +1399,14 @@ class application
 	
 	
 	# Function to create a definition list
-	function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $addRowKeyClasses = false)
+	public static function htmlDl ($array, $keySubstitutions = array (), $omitEmpty = true, $class = 'lines', $allowHtml = false, $showColons = true, $addRowKeyClasses = false)
 	{
-		return application::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $addRowKeyClasses, $dlFormat = true);
+		return self::htmlTableKeyed ($array, $keySubstitutions, $omitEmpty, $class, $allowHtml, $showColons, $addRowKeyClasses, $dlFormat = true);
 	}
 	
 	
 	# Function to convert Unicode to ISO; see http://www.php.net/manual/en/function.mb-convert-encoding.php#78033
-	function unicodeToIso ($string)
+	public static function unicodeToIso ($string)
 	{
 		# Return the string without alteration if the multibyte extension is not present
 		if (!function_exists ('mb_convert_encoding')) {return $string;}
@@ -1417,11 +1417,11 @@ class application
 	
 	
 	# Function to write data to a file (first creating it if it does not exist); returns true if successful or false if there was a problem
-	function writeDataToFile ($data, $file, $unicodeToIso = false, $unicodeAddBom = false)
+	public static function writeDataToFile ($data, $file, $unicodeToIso = false, $unicodeAddBom = false)
 	{
 		# Down-conversion from Unicode to (Excel-readable) ISO
 		if ($unicodeToIso) {
-			$data = application::unicodeToIso ($data);
+			$data = self::unicodeToIso ($data);
 		}
 		
 		# Add the Unicode Byte Order Mark if required to a new file; useful to ensure that Excel understands the CSV as UTF-8
@@ -1437,7 +1437,7 @@ class application
 	
 	
 	# Function to create a file based on a full path supplied
-	function createFileFromFullPath ($file, $data, $addStamp = false)
+	public static function createFileFromFullPath ($file, $data, $addStamp = false, $user = false)
 	{
 		# Determine the new file's directory location
 		$newDirectory = dirname ($file);
@@ -1454,9 +1454,8 @@ class application
 		}
 		
 		# Add either '.old' (for '.old') or username.timestamp (for true) to the file if required
-		#!# {$this->user is completely bogus but works when this method is being run from with an application which sets it}
 		if ($addStamp) {
-			$file .= ($addStamp === '.old' ? '.old' : '.' . date ('Ymd-His') . (isSet ($this->user) ? ".{$this->user}" : ''));
+			$file .= ($addStamp === '.old' ? '.old' : '.' . date ('Ymd-His') . ($user ? ".{$user}" : ''));
 		}
 		
 		# Write the file
@@ -1473,7 +1472,7 @@ class application
 	
 	
 	# Function to check whether an area is writable; provides facilities additional to is_writable; works by moving back from the proposed location until it finds a folder and then checks if that is writable
-	function directoryIsWritable ($location, $root = '/')
+	public static function directoryIsWritable ($location, $root = '/')
 	{
 		# If there is a trailing slash, remove it
 		if (substr ($location, -1) == '/') {$location = substr ($location, 0, -1);}
@@ -1508,7 +1507,7 @@ class application
 	
 	
 	# Function to create a case-insensitive version of in_array
-	function iin_array ($needle, $haystack)
+	public static function iin_array ($needle, $haystack)
 	{
 		# Return true if the needle is in the haystack
 		foreach ($haystack as $item) {
@@ -1523,10 +1522,10 @@ class application
 	
 	
 	# Function to move an array item to the start
-	function array_move_to_start ($array, $newFirstName)
+	public static function array_move_to_start ($array, $newFirstName)
 	{
 		# Check whether the array is associative
-		if (application::isAssociativeArray ($array)) {
+		if (self::isAssociativeArray ($array)) {
 			
 			# Extract the first item
 			$firstItem[$newFirstName] = $array[$newFirstName];
@@ -1555,7 +1554,7 @@ class application
 	
 	
 	# Function to add an ordinal suffix to a number from 0-99 [from http://forums.devshed.com/t43304/s.html]
-	function ordinalSuffix ($number)
+	public static function ordinalSuffix ($number)
 	{
 		# Obtain the last character in the number
 		$last = substr ($number, -1);
@@ -1588,7 +1587,7 @@ class application
 	# Function to convert camelCase to standard text
 	#!# Accept an array so it loops through all
 	#!# Doesn't deal well with letters following numbers, e.g. 'option12foo' becomes 'Option 12foo'
-	function unCamelCase ($string)
+	public static function unCamelCase ($string)
 	{
 		# Special case certain words
 		$replacements = array (
@@ -1601,7 +1600,8 @@ class application
 		$parts = preg_split ('/([A-Z]|[0-9]+)/', $string, false, PREG_SPLIT_DELIM_CAPTURE);
 		$words = array ();
 		array_shift ($parts);
-		for ($i = 0; $i < count ($parts); ++$i) {
+		$count = count ($parts);
+		for ($i = 0; $i < $count; ++$i) {
 			if ($i % 2) {
 				$word = strtolower ($parts[$i - 1] . $parts[$i]);
 				$word = str_replace (array_keys ($replacements), array_values ($replacements), $word);
@@ -1618,7 +1618,7 @@ class application
 	
 	
 	# Function to convert an ini_ setting size to bytes
-	function convertSizeToBytes ($string)
+	public static function convertSizeToBytes ($string)
 	{
 		# Split the supplied size into a number and a unit
 		$parts = array ();
@@ -1642,7 +1642,7 @@ class application
 	
 	
 	# Function to regroup a data set into separate groups
-	function regroup ($data, $regroupByColumn, $removeGroupColumn = true, $regroupedColumnKnownUnique = false)
+	public static function regroup ($data, $regroupByColumn, $removeGroupColumn = true, $regroupedColumnKnownUnique = false)
 	{
 		# Return the data unmodified if not an array or empty
 		if (!is_array ($data) || empty ($data)) {return $data;}
@@ -1669,7 +1669,7 @@ class application
 	
 	
 	# Function to create an unordered HTML list
-	function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false, $selected = false)
+	public static function htmlUl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false, $selected = false)
 	{
 		# Return an empty string if no items
 		if (!is_array ($array) || empty ($array)) {return '';}
@@ -1707,10 +1707,10 @@ class application
 	
 	
 	# Function to create an ordered HTML list
-	function htmlOl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false)
+	public static function htmlOl ($array, $parentTabLevel = 0, $className = NULL, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false)
 	{
 		# Get the HTML as an unordered list
-		$html = application::htmlUl ($array, $parentTabLevel = 0, $className, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false);
+		$html = self::htmlUl ($array, $parentTabLevel = 0, $className, $ignoreEmpty = true, $sanitise = false, $nl2br = false, $liClass = false);
 		
 		# Convert to an ordered list
 		$html = str_replace (array ('<ul', '</ul>'), array ('<ol', '</ol>'), $html);
@@ -1721,7 +1721,7 @@ class application
 	
 	
 	# Function to convert a hierarchy into a hierarchical list; third argument will produce level:text (if set to true) or will carry over text as textFrom0:textFrom1:textFrom2 ... as the link (if set to false)
-	function htmlUlHierarchical ($unit, $class = 'pde', $carryOverQueryText = false, $lastOnly = true, $lowercaseLinks = true, $level = 0)
+	public static function htmlUlHierarchical ($unit, $class = 'pde', $carryOverQueryText = false, $lastOnly = true, $lowercaseLinks = true, $level = 0, $baseUrl = '')
 	{
 		# Work out the tab HTML
 		$tabs = str_repeat ("\t", $level);
@@ -1734,10 +1734,10 @@ class application
 		foreach ($unit as $name => $contents) {
 			$last = $lastOnly && is_array ($contents) && (empty ($contents));
 			$queryText = ($last ? '' : ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':')) . str_replace (' ', '+', strtolower ($name));
-			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$this->baseUrl}/category/{$queryText}\">" : '');
+			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$baseUrl}/category/{$queryText}\">" : '');
 			$html .= "\n\t{$tabs}<li>{$link}" . htmlspecialchars ($name) . ($link ? '</a>' : '');
 			if (is_array ($contents) && (!empty ($contents))) {
-				$html .= application::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), $lastOnly, $lowercaseLinks, ($level + 1));
+				$html .= self::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), $lastOnly, $lowercaseLinks, ($level + 1), $baseUrl);
 			}
 			$html .= '</li>';
 		}
@@ -1751,7 +1751,7 @@ class application
 	
 	
 	# Function to create a listing to the results page
-	function splitListItems ($listItems, $columns = 2, $class = 'splitlist', $byStrlen = false)
+	public static function splitListItems ($listItems, $columns = 2, $class = 'splitlist', $byStrlen = false)
 	{
 		# Work out the maximum number of items in a column
 		$maxPerColumn = ceil (count ($listItems) / $columns);
@@ -1785,7 +1785,7 @@ class application
 	
 	
 	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions, with the extension checked case insensitively; both the checked filename and the allowed/disallowed extensions must start with a .
-	function filenameIsValid ($name, $disallowedExtensions = array (), $allowedExtensions = array ())
+	public static function filenameIsValid ($name, $disallowedExtensions = array (), $allowedExtensions = array ())
 	{
 		# Determine the extension of the file
 		$extension = '.' . pathinfo ($name, PATHINFO_EXTENSION);
@@ -1808,7 +1808,7 @@ class application
 	
 	
 	# Function to help with mimeType/extension lookups
-	function mimeTypeExtensions ()
+	public static function mimeTypeExtensions ()
 	{
 		# Define the MIME Types; list taken from www.mimetype.org
 		$mimeTypes = '
@@ -2031,7 +2031,7 @@ class application
 	# Wrapper function to get CSV data
 	#!# Not finished - needs file handling
 	#!# Need to merge this with csv::getData
-	function getCsvData ($filename, $getHeaders = false, $assignKeys = false, $keyAsFirstRow = false)
+	public static function getCsvData ($filename, $getHeaders = false, $assignKeys = false, $keyAsFirstRow = false)
 	{
 		# Make sure the file exists
 		if (!is_readable ($filename)) {return false;}
@@ -2042,7 +2042,8 @@ class application
 		# Determine the longest line length
 		$longestLineLength = 1000;
 		$array = file ($filename);
-		for ($i = 0; $i < count ($array); $i++) {
+		$count = count ($array);
+		for ($i = 0; $i < $count; $i++) {
 			if ($longestLineLength < strlen ($array[$i])) {
 				$longestLineLength = strlen ($array[$i]);
 			}
@@ -2085,7 +2086,7 @@ class application
 	
 	
 	# Wrapper function to turn a (possibly multi-dimensional) associative array into a correctly-formatted CSV format (including escapes)
-	function arrayToCsv ($array, $delimiter = ',', $nestParent = false)
+	public static function arrayToCsv ($array, $delimiter = ',', $nestParent = false)
 	{
 		# Start an array of headers and the data
 		$headers = array ();
@@ -2096,7 +2097,7 @@ class application
 			
 			# If the associative array is multi-dimensional, iterate and thence add the sub-headers and sub-values to the array
 			if (is_array ($value)) {
-				list ($subHeaders, $subData) = application::arrayToCsv ($value, $delimiter, $key);
+				list ($subHeaders, $subData) = self::arrayToCsv ($value, $delimiter, $key);
 				
 				# Merge the headers and subkeys
 				$headers[] = $subHeaders;
@@ -2109,8 +2110,8 @@ class application
 				if ($nestParent) {$key = "$nestParent: $key";}
 				
 				# Add the key and value to arrays of the headers and data
-				$headers[] = application::csvSafeDataCell ($key, $delimiter);
-				$data[] = application::csvSafeDataCell ($value, $delimiter);
+				$headers[] = self::csvSafeDataCell ($key, $delimiter);
+				$data[] = self::csvSafeDataCell ($value, $delimiter);
 			}
 		}
 		
@@ -2124,7 +2125,7 @@ class application
 	
 	
 	# Function to convert a text block to a list
-	public function textareaToList ($string)
+	public static function textareaToList ($string)
 	{
 		# End if none
 		if (!strlen ($string)) {return array ();}
@@ -2144,7 +2145,7 @@ class application
 	
 	
 	# Function to parse a set of numeric items, e.g. '12,134-6' => array(12,134,135,136)
-	public function parseRangeList ($string, &$errorMessage)
+	public static function parseRangeList ($string, &$errorMessage)
 	{
 		# End if not syntactically valid
 		if (!preg_match ('/^[-,0-9]*[0-9]$/', $string)) {	// * is used otherwise a single, one-digit number, e.g. '4', won't be accepted
@@ -2185,7 +2186,7 @@ class application
 	 * Function to string-replace cases of e.g. '9532-4' to '9532 9533 9534' within a longer string
 	 *
 	 */
-	public function expandRange ($string, &$errorMessage)
+	public static function expandRange ($string, &$errorMessage)
 	{
 		# Find any matches (ending if none), and extract the first and last location number for each
 		if (!preg_match_all ('/^([0-9]+)-([0-9]+)$/', $string, $matches, PREG_SET_ORDER)) {
@@ -2242,7 +2243,7 @@ class application
 	
 	
 	# Helper function to convert a list of, or string containing, pipe-surrounded tokens to a uniqued list, e.g. array('|a|b|','|c|') becomes array ('a','b','c'); if a value has no separator, this will be returned as a single-value array; in lookup mode, retain the originals as the keys and provide a list instead
-	public function splitCombinedTokenList ($data, $separator = '|', $lookupMode = false)
+	public static function splitCombinedTokenList ($data, $separator = '|', $lookupMode = false)
 	{
 		# End if an empty array or zero-length string; this will not corrupt string "0"
 		if ($data == array () || (is_string ($data) && !strlen ($data))) {return array ();}
@@ -2276,7 +2277,7 @@ class application
 	
 	
 	# Called function to make a data cell CSV-safe
-	function csvSafeDataCell ($data, $delimiter = ',')
+	public static function csvSafeDataCell ($data, $delimiter = ',')
 	{
 		#!# Consider a flag for HTML entity cleaning so that e.g. " rather than &#8220; appears in Excel
 		
@@ -2297,7 +2298,7 @@ class application
 	
 	
 	# Function to provide a preference type switcher
-	public function preferenceSwitcher (&$preferenceSwitcherHtml = '', $preferenceTypes = array (), $id = 'listingtypeswitcher')
+	public static function preferenceSwitcher (&$preferenceSwitcherHtml = '', $preferenceTypes = array (), $id = 'listingtypeswitcher', $baseUrl = '')
 	{
 		/* 
 		# Requires an array of modes, e.g.
@@ -2328,8 +2329,8 @@ class application
 		$requested = ((isSet ($_GET[$parameter]) && array_key_exists ($_GET[$parameter], $choices)) ? $_GET[$parameter] : false);
 		if ($requested) {
 			$thirtyDays = 7 * 24 * 60 * 60;
-			setcookie ($parameter, $requested, time () + $thirtyDays, $this->baseUrl . '/', $_SERVER['SERVER_NAME']);
-			$preferenceSwitcherHtml = application::sendHeader (301, $_SERVER['SCRIPT_URL'], $redirectMessage = true);
+			setcookie ($parameter, $requested, time () + $thirtyDays, $baseUrl . '/', $_SERVER['SERVER_NAME']);
+			$preferenceSwitcherHtml = self::sendHeader (301, $_SERVER['SCRIPT_URL'], $redirectMessage = true);
 			return $preferenceSwitcherHtml;
 		}
 		
@@ -2337,7 +2338,7 @@ class application
 		$selected = ((isSet ($_COOKIE[$parameter]) && array_key_exists ($_COOKIE[$parameter], $choices)) ? $_COOKIE[$parameter] : $default);
 		
 		# Compile the HTML, highlighting the selected type
-		$preferenceSwitcherHtml = application::htmlUl ($choices, 0, 'inline', true, false, false, false, $selected);
+		$preferenceSwitcherHtml = self::htmlUl ($choices, 0, 'inline', true, false, false, false, $selected);
 		
 		# Surround with a div
 		$preferenceSwitcherHtml = "\n<div id=\"{$id}\">" . $preferenceSwitcherHtml . "\n</div>";
@@ -2347,8 +2348,8 @@ class application
 	}
 	
 	
-	// create a cloud tag; based on comment posted under http://www.hawkee.com/snippet.php?snippet_id=1485
-	function tagCloud ($tags, $classBase = 'tagcloud', $sizes = 5)
+	# Function to create a cloud tag; based on comment posted under http://www.hawkee.com/snippet.php?snippet_id=1485
+	public static function tagCloud ($tags, $classBase = 'tagcloud', $sizes = 5)
 	{
 		# End if no tags
 		if (!$tags) {return false;}
@@ -2393,7 +2394,7 @@ class application
 	
 	# Function to create a URL slug
 	#!# Solution based on www.thinkingphp.org/2006/10/19/title-to-url-slug-conversion/ ; consider instead using something more like Wordpress' sanitize_title, as here: http://trac.wordpress.org/browser/trunk/wp-includes/functions-formatting.php?rev=1481
-	function createUrlSlug ($string)
+	public static function createUrlSlug ($string)
 	{
 		# Trim the string
 		$string = trim ($string);
@@ -2613,7 +2614,7 @@ class application
 	
 	
 	# Function to unzip a zip file
-	function unzip ($file, $directory, $deleteAfterUnzipping = true, $archiveOverwritableFiles = true, $expectTotal = false, $expectTotalForcedFilenames = array ())
+	public static function unzip ($file, $directory, $deleteAfterUnzipping = true, $archiveOverwritableFiles = true, $expectTotal = false, $expectTotalForcedFilenames = array (), $directoryPermissions = 0775)
 	{
 		# Open the zip
 		if (!$zip = @zip_open ($directory . $file)) {return false;}
@@ -2633,7 +2634,7 @@ class application
 			$targetDirectory = dirname ($directory . $zipEntryName) . '/';
 			if (!is_dir ($targetDirectory)) {
 				umask (0);
-				if (!mkdir ($targetDirectory, $this->settings['directoryPermissions'], true)) {
+				if (!mkdir ($targetDirectory, $directoryPermissions, true)) {
 					$deleteAfterUnzipping = false;	// Don't delete the source file if this fails
 					continue;
 				}
@@ -2720,7 +2721,7 @@ class application
 	
 	
 	# Function to convert ereg to preg
-	function pereg ($pattern, $string)
+	public static function pereg ($pattern, $string)
 	{
 		$preg = '/' . addcslashes ($pattern, '/') . '/';
 		return preg_match ($preg, $string);
@@ -2728,7 +2729,7 @@ class application
 	
 	
 	# Function to convert eregi to preg
-	function peregi ($pattern, $string)
+	public static function peregi ($pattern, $string)
 	{
 		$preg = '/' . addcslashes ($pattern, '/') . '/i';
 		return preg_match ($preg, $string);
@@ -2736,7 +2737,7 @@ class application
 	
 	
 	# Function to convert eregi_replace to preg_replace
-	function peregi_replace ($pattern, $replace, $string)
+	public static function peregi_replace ($pattern, $replace, $string)
 	{
 		// $pattern = str_replace ('[[:space:]]', '\s', $pattern);
 		$preg = '/' . addcslashes ($pattern, '/') . '/i';
@@ -2802,10 +2803,10 @@ if (!function_exists ('mime_content_type') && (!strstr (PHP_OS, 'WIN')))
 # Emulation of htmlspecialchars_decode; from http://uk.php.net/manual/en/function.htmlspecialchars-decode.php#68962
 if ( !function_exists('htmlspecialchars_decode') )
 {
-    function htmlspecialchars_decode($text)
-    {
-        return strtr($text, array_flip(get_html_translation_table(HTML_SPECIALCHARS)));
-    }
+	function htmlspecialchars_decode($text)
+	{
+		return strtr($text, array_flip(get_html_translation_table(HTML_SPECIALCHARS)));
+	}
 }
 
 
