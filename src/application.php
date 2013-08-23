@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
- * Version 1.5.0
+ * Version 1.5.1
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1678,7 +1678,7 @@ class application
 		$tabs = str_repeat ("\t", ($parentTabLevel));
 		
 		# Build the list
-		$html = "\n$tabs<ul" . ($className ? " class=\"$className\"" : '') . '>';
+		$html = "\n$tabs<ul" . ($className ? " class=\"{$className}\"" : '') . '>';
 		foreach ($array as $key => $item) {
 			
 			# Skip an item if the item is empty and the flag is set to ignore these
@@ -1690,7 +1690,7 @@ class application
 			
 			# Determine a class
 			$class = array ();
-			if ($selected && ($selected == $key)) {$class[] = 'selected';}
+			if ($selected !== false && ($selected == $key)) {$class[] = 'selected';}	// !== is used so that it can match the empty string
 			if ($liClass) {
 				$class[] = ($liClass === true ? $key : $liClass);
 			}
@@ -2717,6 +2717,39 @@ class application
 		
 		# Sort and return the list of unzipped files
 		return $unzippedFiles;
+	}
+	
+	
+	# Function to pluralise a signular word; currently only basic support
+	public static function pluralise ($singularWord)
+	{
+		# Pluralise
+		switch (true) {
+			case preg_match ('/(.+)y$/', $singularWord, $matches):
+				return $matches[1] . 'ies';
+			case preg_match ('/(.+)s$/', $singularWord, $matches):
+				return $matches[1] . "s'";
+			default:
+				return $singularWord . 's';
+		}
+	}
+	
+	
+	# Function to singularise a plural word; currently only basic support
+	public static function singularise ($pluralWord)
+	{
+		# Singularise
+		switch (true) {
+			case preg_match ('/(.+)ies$/', $pluralWord, $matches):
+				return $matches[1] . 'y';
+			case preg_match ('/(.+)s\'$/', $pluralWord, $matches):
+				return $matches[1] . 's';
+			case preg_match ('/(.+)s$/', $pluralWord, $matches):
+				return $matches[1];
+		}
+		
+		# Return unmodified if no match found
+		return $pluralWord;
 	}
 	
 	
