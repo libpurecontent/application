@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
- * Version 1.5.1
+ * Version 1.5.2
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1551,6 +1551,31 @@ class application
 		# Return the reordered array
 		return $array;
 	}
+	
+	
+	# Function to check the fieldnames in an associative array are consistent, and to return a list of them
+	public static function arrayFieldsConsistent ($dataSet)
+	{
+		# Return an empty array if the dataset is empty
+		if (!$dataSet) {return array ();}
+		
+		# Loop through the dataset
+		foreach ($dataSet as $key => $data) {
+			$fieldnames = array_keys ($data);
+			
+			# Check that the field list (including order) is consistent across every record
+			if (isSet ($cachedFieldList)) {
+				if ($fieldnames !== $cachedFieldList) {
+					return false;
+				}
+			}
+			$cachedFieldList = $fieldnames;
+		}
+		
+		# Return the fieldnames list
+		return $fieldnames;
+	}
+	
 	
 	
 	# Function to add an ordinal suffix to a number from 0-99 [from http://forums.devshed.com/t43304/s.html]
