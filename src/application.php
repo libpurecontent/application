@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
- * Version 1.5.2
+ * Version 1.5.3
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1195,7 +1195,7 @@ class application
 	
 	
 	# Function to generate a password
-	public static function generatePassword ($length = 6, $numeric = false)
+	public static function generatePassword ($length = 6 /* For generating tokens, 24 is recommended instead */, $numeric = false)
 	{
 		# Generate a numeric password if that is what is required
 		if ($numeric) {
@@ -1205,14 +1205,29 @@ class application
 			for ($i = 0; $i < $length; $i++) {
 				$password .= rand (0, 9);
 			}
+			return $password;
+			
+		# Otherwise do an alphanumeric password; code from http://www.php.net/openssl-random-pseudo-bytes#96812
 		} else {
 			
-			# Otherwise do an alphanumeric password
-			$password = substr (md5 (time ()), 0, $length);
+			# Prefer OpenSSL implementation
+			if (function_exists ('openssl_random_pseudo_bytes')) {
+				$password = bin2hex (openssl_random_pseudo_bytes ($length, $strong));	// bin2hex used so that characters guaranteed to be 0-9a-f, easily usable in a URL
+				if ($strong == TRUE) {
+					return substr ($password, 0, $length);
+				}
+			}
+			
+			# Fallback to mt_rand if PHP <5.3 or no OpenSSL available
+			$characters = '0123456789';
+			$characters .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/+'; 
+			$charactersLength = strlen ($characters) - 1;
+			$password = '';
+			for ($i = 0; $i < $length; $i++) {
+				$password .= $characters[mt_rand (0, $charactersLength)];
+			}
+			return $password;
 		}
-		
-		# Return the result
-		return $password;
 	}
 	
 	
