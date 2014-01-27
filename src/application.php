@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
- * Version 1.5.3
+ * Version 1.5.4
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -183,13 +183,14 @@ class application
 	
 	
 	# Function to set a flash message
-	public static function setFlashMessage ($name, $value, $redirectTo, $redirectMessage = false, $path = '/')
+	#!# Currently also does a redirect, which is probably best separated out, or the function renamed to setFlashRedirect
+	public static function setFlashMessage ($name, $value, $redirectToPath, $redirectMessage = false, $path = '/')
 	{
 		# Set the cookie
 		setcookie ("flashredirect_{$name}", $value, time () + (60*5), $path);
 		
 		# Redirect to the specified location
-		$html = self::sendHeader (301, $_SERVER['_SITE_URL'] . $redirectTo, $redirectMessage);
+		$html = self::sendHeader (302, $_SERVER['_SITE_URL'] . $redirectToPath, $redirectMessage);
 		
 		# Return the HTML which will be displayed as the fallback
 		return $html;
