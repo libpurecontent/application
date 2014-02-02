@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-13
- * Version 1.5.4
+ * Version 1.5.5
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2791,6 +2791,32 @@ class application
 		
 		# Return unmodified if no match found
 		return $pluralWord;
+	}
+	
+	
+	# Equivalent of file_get_contents but for POST rather than GET
+	public static function file_post_contents ($url, $postData, &$error = '')
+	{
+		# Create a CURL instance
+		$handle = curl_init ();
+		curl_setopt ($handle, CURLOPT_URL, $url);
+		
+		# Set the user agent
+		$userAgent = 'Proxy for: ' . $_SERVER['HTTP_USER_AGENT'];
+		curl_setopt ($handle, CURLOPT_USERAGENT, $userAgent);
+		
+		# Build the POST query
+		$post = http_build_query ($postData);
+		curl_setopt ($handle, CURLOPT_POSTFIELDS, $post);
+		
+		# Obtain the original page HTML
+		curl_setopt ($handle, CURLOPT_RETURNTRANSFER, true);
+		$output = curl_exec ($handle);
+		$error = curl_error ($handle);
+		curl_close ($handle);
+		
+		# Return the original page HTML
+		return $output;
 	}
 	
 	
