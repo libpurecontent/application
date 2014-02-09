@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-14
- * Version 1.5.6
+ * Version 1.5.7
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -645,7 +645,7 @@ class application
 	}
 	
 	
-	# Function to return only the specified fields of an existing array
+	# Function to return only the specified fields of an existing array, returning in the order of the specified fields
 	public static function arrayFields ($array, $fields)
 	{
 		# Return unamended if not an array
@@ -654,7 +654,7 @@ class application
 		# Ensure the fields are an array
 		$fields = self::ensureArray ($fields);
 		
-		# Loop through the array and extract only the wanted fields
+		# Loop through the array and extract only the wanted fields, returning in the order of the specified fields
 		$filteredArray = array ();
 		foreach ($fields as $field) {
 			if (array_key_exists ($field, $array)) {
@@ -2809,7 +2809,7 @@ class application
 	
 	
 	# Equivalent of file_get_contents but for POST rather than GET
-	public static function file_post_contents ($url, $postData, &$error = '')
+	public static function file_post_contents ($url, $postData, $multipart = false, &$error = '')
 	{
 		# Create a CURL instance
 		$handle = curl_init ();
@@ -2819,9 +2819,14 @@ class application
 		$userAgent = 'Proxy for: ' . $_SERVER['HTTP_USER_AGENT'];
 		curl_setopt ($handle, CURLOPT_USERAGENT, $userAgent);
 		
+		# When not multipart (i.e. when a file is not included), build the data into a string: see http://stackoverflow.com/a/5224895/180733 "If value is an array, the Content-Type header will be set to multipart/form-data"
+		if (!$multipart) {
+			$postData = http_build_query ($postData);
+		}
+		
 		# Build the POST query
-		$post = http_build_query ($postData);
-		curl_setopt ($handle, CURLOPT_POSTFIELDS, $post);
+		curl_setopt ($handle, CURLOPT_POST, 1);
+		curl_setopt ($handle, CURLOPT_POSTFIELDS, $postData);
 		
 		# Obtain the original page HTML
 		curl_setopt ($handle, CURLOPT_RETURNTRANSFER, true);
