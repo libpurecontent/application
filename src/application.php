@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-14
- * Version 1.5.8
+ * Version 1.5.9
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2665,6 +2665,29 @@ class application
 		
 		# Return the value
 		return $string;
+	}
+	
+	
+	# Function create a zip file on-the-file; see: http://stackoverflow.com/questions/1061710/
+	public static function zipFromString ($string, $asFilename)
+	{
+		# Prepare file, using a tempfile
+		$file = tempnam (sys_get_temp_dir(), 'temp' . self::generatePassword ($length = 6, true));
+		$zip = new ZipArchive ();
+		$zip->open ($file, ZipArchive::OVERWRITE);
+		
+		# Add string content as a contained file and close file
+		$zip->addFromString ($asFilename, $string);
+		$zip->close ();
+		
+		# Serve the file
+		header ('Content-Type: application/zip');
+		header ('Content-Length: ' . filesize ($file));
+		header ("Content-Disposition: attachment; filename=\"{$asFilename}.zip\"");		// e.g. filename.ext.zip
+		readfile ($file);
+		
+		# Remove the tempfile
+		unlink ($file);
 	}
 	
 	
