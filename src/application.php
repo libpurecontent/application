@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-14
- * Version 1.5.9
+ * Version 1.5.10
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1566,6 +1566,40 @@ class application
 		
 		# Return the reordered array
 		return $array;
+	}
+	
+	
+	# Function to insert a value before another in order; either afterField or beforeField must be specified
+	public function array_insert_value ($array, $newFieldKey, $newFieldValue, $afterField = false, $beforeField = false)
+	{
+		# Throw error if neither or both of after/before supplied
+		if (!$afterField && !$beforeField) {return false;}
+		if ($afterField && $beforeField) {return false;}
+		
+		# Insert the new value
+		$data = array ();
+		foreach ($array as $key => $value) {
+			
+			# Add field in 'before' mode
+			if ($beforeField) {
+				if ($key == $beforeField) {
+					$data[$newFieldKey] = $newFieldValue;
+				}
+			}
+			
+			# Carry across current data
+			$data[$key] = $value;
+			
+			# Add field in 'after' mode
+			if ($afterField) {
+				if ($key == $afterField) {
+					$data[$newFieldKey] = $newFieldValue;
+				}
+			}
+		}
+		
+		# Return the modified array
+		return $data;
 	}
 	
 	
