@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-14
- * Version 1.5.12
+ * Version 1.5.13
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -733,6 +733,32 @@ class application
 				}
 			}
 		}
+	}
+	
+	
+	# Function to clear empty rows
+	public static function clearEmptyRows ($data)
+	{
+		# Work through each row
+		foreach ($data as $id => $row) {
+			
+			# Determine if any column is empty
+			$allEmpty = true;
+			foreach ($row as $key => $value) {
+				if (strlen ($value)) {
+					$allEmpty = false;
+					break;	// Stop if value found
+				}
+			}
+			
+			# If all are empty, unset the row
+			if ($allEmpty) {
+				unset ($data[$id]);
+			}
+		}
+		
+		# Return the data
+		return $data;
 	}
 	
 	
