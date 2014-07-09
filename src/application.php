@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-14
- * Version 1.5.13
+ * Version 1.5.14
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1637,6 +1637,30 @@ class application
 	}
 	
 	
+	# Iterative function to rewrite key names in an array iteratively
+	public static function array_key_str_replace ($search, $replace, $array)
+	{
+		# Work through each array element at the current level
+		foreach ($array as $key => $value) {
+			
+			# Perform substitution if needed
+			if (substr_count ($key, $search)) {
+				unset ($array[$key]);	// Remove current element
+				$key = str_replace ($search, $replace, $key);
+				$array[$key] = $value;
+			}
+			
+			# Iterate if required
+			if (is_array ($value)) {
+				$array[$key] = self::array_key_str_replace ($search, $replace, $value);
+			}
+		}
+		
+		# Return the modified array
+		return $array;
+	}
+	
+	
 	# Function to check the fieldnames in an associative array are consistent, and to return a list of them
 	public static function arrayFieldsConsistent ($dataSet)
 	{
@@ -2949,6 +2973,7 @@ class application
 		
 		# Convert to PDF; see options at http://wkhtmltopdf.org/usage/wkhtmltopdf.txt
 		$command = "wkhtmltopdf --print-media-type {$inputFile} {$outputFile}";
+$command = '/usr/local/bin/' . $command;
 		exec ($command, $output, $returnValue);
 		$result = (!$returnValue);
 		
