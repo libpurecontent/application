@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-14
- * Version 1.5.15
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
+ * Version 1.5.16
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2762,8 +2762,9 @@ class application
 	}
 	
 	
+	
 	# Function create a zip file on-the-file; see: http://stackoverflow.com/questions/1061710/
-	public static function zipFromString ($string, $asFilename)
+	public static function zipFromString ($string, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */)
 	{
 		# Prepare file, using a tempfile
 		$file = tempnam (sys_get_temp_dir(), 'temp' . self::generatePassword ($length = 6, true));
@@ -2773,6 +2774,13 @@ class application
 		# Add string content as a contained file and close file
 		$zip->addFromString ($asFilename, $string);
 		$zip->close ();
+		
+		# If a directory path for save is specified, write the file to its final location and return its path
+		if ($saveToDirectory) {
+			$filename = $saveToDirectory . $asFilename . '.zip';
+			rename ($file, $filename);
+			return $filename;
+		}
 		
 		# Serve the file
 		header ('Content-Type: application/zip');
@@ -2975,7 +2983,7 @@ class application
 		
 		# Convert to PDF; see options at http://wkhtmltopdf.org/usage/wkhtmltopdf.txt
 		$command = "wkhtmltopdf --print-media-type {$inputFile} {$outputFile}";
-$command = '/usr/local/bin/' . $command;
+		$command = '/usr/local/bin/' . $command;	#!# Need to fix this more generically
 		exec ($command, $output, $returnValue);
 		$result = (!$returnValue);
 		
@@ -3011,6 +3019,38 @@ $command = '/usr/local/bin/' . $command;
 		
 		# Return success
 		return true;
+	}
+	
+	
+	# Function to handle running a python process securely without writing out any files
+	public static function createProcess ($command, $string)
+	{
+		# Set the descriptors
+		$descriptorspec = array (
+			0 => array ('pipe', 'r'),  // stdin is a pipe that the child will read from
+			1 => array ('pipe', 'w'),  // stdout is a pipe that the child will write to
+			// 2 => array ('file', '/tmp/error-output.txt', 'a') // stderr is a file to write to
+		);
+		
+		# Assume failure unless the command works
+		$returnStatus = 1;
+		
+		# Create the process
+		$command = str_replace ("\r\n", "\n", $command);	// Standardise to Unix newlines
+		$process = proc_open ($command, $descriptorspec, $pipes);
+		if (is_resource ($process)) {
+			fwrite ($pipes[0], $string);
+			fclose ($pipes[0]);
+			$output = stream_get_contents ($pipes[1]);
+			fclose ($pipes[1]);
+			$returnStatus = proc_close ($process);
+		}
+		
+		# Return false as the output if the return status is a failure
+		if ($returnStatus) {return false;}	// Unix return status >0 is failure
+		
+		# Return the output
+		return $output;
 	}
 	
 	
