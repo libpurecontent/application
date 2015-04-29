@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.16
+ * Version 1.5.17
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2762,30 +2762,55 @@ class application
 	}
 	
 	
-	
-	# Function create a zip file on-the-file; see: http://stackoverflow.com/questions/1061710/
-	public static function zipFromString ($string, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */)
+	# Function create a zip/gzip file on-the-file; see: http://stackoverflow.com/questions/1061710/
+	public static function zipFromString ($string, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */, $format = 'zip' /* or gz */)
 	{
 		# Prepare file, using a tempfile
 		$file = tempnam (sys_get_temp_dir(), 'temp' . self::generatePassword ($length = 6, true));
-		$zip = new ZipArchive ();
-		$zip->open ($file, ZipArchive::OVERWRITE);
 		
-		# Add string content as a contained file and close file
-		$zip->addFromString ($asFilename, $string);
-		$zip->close ();
+		# Create depending on format
+		switch ($format) {
+			
+			# Gzip; on Linux shell out as this is more memory efficient
+			case 'gz':
+				if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+					#!# Needs to be replaced with chunk-based implementation for memory efficiency
+					$gzip = gzopen ($file, 'w9');	// w9 is highest compression
+					gzwrite ($gzip, $string);
+					gzclose ($gzip);
+				} else {
+					file_put_contents ($file, $string);
+					$command = "gzip {$file}";
+					exec ($command);
+					rename ($file . '.gz', $file);	// Rename back, as gzip will have added .gz
+				}
+				$mimeType = 'application/gzip';
+				break;
+				
+			# Zip
+			case 'zip':
+				$zip = new ZipArchive ();
+				$zip->open ($file, ZipArchive::OVERWRITE);
+				$zip->addFromString ($asFilename, $string);
+				$zip->close ();
+				$mimeType = 'application/zip';
+				break;
+		}
 		
-		# If a directory path for save is specified, write the file to its final location and return its path
+		# If a directory path for save is specified, write the file to its final location, give it group writability and return its path
 		if ($saveToDirectory) {
-			$filename = $saveToDirectory . $asFilename . '.zip';
+			$filename = $saveToDirectory . $asFilename . '.' . $format;
 			rename ($file, $filename);
+			$originalUmask = umask (0000);
+			chmod ($filename, 0664);
+			umask ($originalUmask);
 			return $filename;
 		}
 		
 		# Serve the file
-		header ('Content-Type: application/zip');
+		header ('Content-Type: ' . $mimeType);
 		header ('Content-Length: ' . filesize ($file));
-		header ("Content-Disposition: attachment; filename=\"{$asFilename}.zip\"");		// e.g. filename.ext.zip
+		header ("Content-Disposition: attachment; filename=\"{$asFilename}.{$format}\"");		// e.g. filename.ext.zip
 		readfile ($file);
 		
 		# Remove the tempfile
@@ -2983,7 +3008,6 @@ class application
 		
 		# Convert to PDF; see options at http://wkhtmltopdf.org/usage/wkhtmltopdf.txt
 		$command = "wkhtmltopdf --print-media-type {$inputFile} {$outputFile}";
-		$command = '/usr/local/bin/' . $command;	#!# Need to fix this more generically
 		exec ($command, $output, $returnValue);
 		$result = (!$returnValue);
 		
