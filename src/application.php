@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.18
+ * Version 1.5.19
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2762,11 +2762,11 @@ class application
 	}
 	
 	
-	# Function create a zip/gzip file on-the-file; see: http://stackoverflow.com/questions/1061710/
-	public static function zipFromString ($string, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */, $format = 'zip' /* or gz */)
+	# Function create a zip/gzip file on-the-fly; see: http://stackoverflow.com/questions/1061710/
+	public static function createZip ($inputFile, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */, $format = 'zip' /* or gz */)
 	{
 		# Prepare file, using a tempfile
-		$file = tempnam (sys_get_temp_dir(), 'temp' . self::generatePassword ($length = 6, true));
+		$tmpFile = tempnam (sys_get_temp_dir(), 'temp' . self::generatePassword ($length = 6, true));
 		
 		# Create depending on format
 		switch ($format) {
@@ -2774,15 +2774,15 @@ class application
 			# Gzip; on Linux shell out as this is more memory efficient
 			case 'gz':
 				if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-					#!# Needs to be replaced with chunk-based implementation for memory efficiency
-					$gzip = gzopen ($file, 'w9');	// w9 is highest compression
-					gzwrite ($gzip, $string);
+					#!# Needs to be replaced with chunk-based implementation for memory efficiency; see: http://stackoverflow.com/questions/6073397/how-do-you-create-a-gz-file-using-php
+					$gzip = gzopen ($tmpFile, 'w9');	// w9 is highest compression
+					gzwrite ($gzip, file_get_contents ($inputFile));	// #!# Will fail if input file is >2GB as that is max byte size of a PHP string
 					gzclose ($gzip);
 				} else {
-					file_put_contents ($file, $string);
-					$command = "gzip {$file}";
+					copy ($inputFile, $tmpFile);	// Clone file to temp area as gzipping will otherwise remove the original file
+					$command = "gzip {$tmpFile}";
 					exec ($command);
-					rename ($file . '.gz', $file);	// Rename back, as gzip will have added .gz
+					rename ($tmpFile . '.gz', $tmpFile);	// Rename back, as gzip will have added .gz, so that the tempfile is at a predictable location
 				}
 				$mimeType = 'application/gzip';
 				break;
@@ -2790,17 +2790,17 @@ class application
 			# Zip
 			case 'zip':
 				$zip = new ZipArchive ();
-				$zip->open ($file, ZipArchive::OVERWRITE);
-				$zip->addFromString ($asFilename, $string);
+				$zip->open ($tmpFile, ZipArchive::OVERWRITE);
+				$zip->addFile ($inputFile, $asFilename);
 				$zip->close ();
 				$mimeType = 'application/zip';
 				break;
 		}
 		
-		# If a directory path for save is specified, write the file to its final location, give it group writability and return its path
+		# If a directory path for save is specified, write the file to its final location, give it group writability and return its path, leaving it in place
 		if ($saveToDirectory) {
 			$filename = $saveToDirectory . $asFilename . '.' . $format;
-			rename ($file, $filename);
+			rename ($tmpFile, $filename);
 			$originalUmask = umask (0000);
 			chmod ($filename, 0664);
 			umask ($originalUmask);
@@ -2809,12 +2809,12 @@ class application
 		
 		# Serve the file
 		header ('Content-Type: ' . $mimeType);
-		header ('Content-Length: ' . filesize ($file));
+		header ('Content-Length: ' . filesize ($tmpFile));
 		header ("Content-Disposition: attachment; filename=\"{$asFilename}.{$format}\"");		// e.g. filename.ext.zip
-		readfile ($file);
+		readfile ($tmpFile);
 		
 		# Remove the tempfile
-		unlink ($file);
+		unlink ($tmpFile);
 	}
 	
 	
