@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.17
+ * Version 1.5.18
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2959,14 +2959,14 @@ class application
 	
 	
 	# Equivalent of file_get_contents but for POST rather than GET
-	public static function file_post_contents ($url, $postData, $multipart = false, &$error = '')
+	public static function file_post_contents ($url, $postData, $multipart = false, &$error = '', $userAgent = 'Proxy for: %HTTP_USER_AGENT')
 	{
 		# Create a CURL instance
 		$handle = curl_init ();
 		curl_setopt ($handle, CURLOPT_URL, $url);
 		
 		# Set the user agent
-		$userAgent = 'Proxy for: ' . $_SERVER['HTTP_USER_AGENT'];
+		$userAgent = str_replace ('%HTTP_USER_AGENT', $_SERVER['HTTP_USER_AGENT'], $userAgent);
 		curl_setopt ($handle, CURLOPT_USERAGENT, $userAgent);
 		
 		# When not multipart (i.e. when a file is not included), build the data into a string: see http://stackoverflow.com/a/5224895/180733 "If value is an array, the Content-Type header will be set to multipart/form-data"
