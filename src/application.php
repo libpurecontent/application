@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.19
+ * Version 1.5.20
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1660,6 +1660,44 @@ class application
 		
 		# Return the modified array
 		return $array;
+	}
+	
+	
+	# Function to rename fields in a dataset
+	public static function array_rename_dataset_fields ($dataset, $substitutions)
+	{
+		# Work through each record
+		$datasetAmended = array ();
+		foreach ($dataset as $key => $record) {
+			foreach ($record as $field => $value) {
+				
+				# Determine the new field if available
+				if (array_key_exists ($field, $substitutions)) {
+					if (is_null ($substitutions[$field])) {continue;}	// Skip fields marked as NULL
+					$field = $substitutions[$field];
+				}
+				
+				# Register in the result array
+				$datasetAmended[$key][$field] = $value;
+			}
+		}
+		
+		# Return the amended dataset
+		return $datasetAmended;
+	}
+	
+	
+	# Function to extract a single field from a dataset, returning an array of the values
+	public static function array_extract_dataset_field ($dataset, $field)
+	{
+		# Extract the values
+		$data = array ();
+		foreach ($dataset as $key => $record) {
+			$data[$key] = (array_key_exists ($field, $record) ? $record[$field] : NULL);	// Return NULL for this key if the field is not found
+		}
+		
+		# Return the array
+		return $data;
 	}
 	
 	
