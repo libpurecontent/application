@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.21
+ * Version 1.5.22
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1907,7 +1907,7 @@ class application
 		foreach ($unit as $name => $contents) {
 			$last = $lastOnly && is_array ($contents) && (empty ($contents));
 			$queryText = ($last ? '' : ($carryOverQueryText ? ($level != 0 ? $carryOverQueryText . ':' : '') : ($level + 1) . ':')) . str_replace (' ', '+', strtolower ($name));
-			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$baseUrl}/category/{$queryText}\">" : '');
+			$link = ($last /*(substr ($name, 0, 1) != '<')*/ ? "<a href=\"{$baseUrl}/{$queryText}/\">" : '');
 			$html .= "\n\t{$tabs}<li>{$link}" . htmlspecialchars ($name) . ($link ? '</a>' : '');
 			if (is_array ($contents) && (!empty ($contents))) {
 				$html .= self::htmlUlHierarchical ($contents, false, ($carryOverQueryText ? $queryText : false), $lastOnly, $lowercaseLinks, ($level + 1), $baseUrl);
