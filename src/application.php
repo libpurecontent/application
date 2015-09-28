@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.22
+ * Version 1.5.23
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -230,7 +230,7 @@ class application
 		
 		# Show the data
 		if ($hide) {$html .= "\n<!--";}
-		$html .= "\n" . '<pre class="debug">DEBUG: ';
+		$html .= "\n" . '<pre class="debug"><strong>DEBUG:</strong> ';
 		if (is_array ($data)) {
 			$data = print_r ($data, true);
 		}
@@ -1724,6 +1724,21 @@ class application
 		return $fieldnames;
 	}
 	
+	
+	# Function to count the number of regexp matches in an array of values
+	public static function array_preg_match_total ($pattern, $subjectArray)
+	{
+		# Find matches
+		$matches = 0;
+		foreach ($subjectArray as $value) {
+			if (preg_match ($pattern, $value)) {
+				$matches++;
+			}
+		}
+		
+		# Return the total matches
+		return $matches;
+	}
 	
 	
 	# Function to add an ordinal suffix to a number from 0-99 [from http://forums.devshed.com/t43304/s.html]
