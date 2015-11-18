@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.23
+ * Version 1.5.24
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1738,6 +1738,22 @@ class application
 		
 		# Return the total matches
 		return $matches;
+	}
+	
+	
+	# Function to find a regexp match in an array of values
+	public static function preg_match_array ($pattern, $subjectArray, $returnKey = false)
+	{
+		# Search for a match
+		foreach ($subjectArray as $key => $value) {
+			$delimiter = '@';
+			if (preg_match ($delimiter . addcslashes ($pattern, $delimiter) . $delimiter, $value)) {
+				return ($returnKey ? $key : $value);
+			}
+		}
+		
+		# No match
+		return false;
 	}
 	
 	
