@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.25
+ * Version 1.5.26
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -3195,7 +3195,11 @@ class application
 			
 			# If a string whitelist has been supplied, strip from consideration
 			foreach ($whitelistStrings as $whitelistString) {
-				$relevantString = str_replace ($whitelistString, '', $relevantString);
+				if (preg_match ('|^/.+/i?$|', $whitelistString)) {
+					$relevantString = preg_replace ($whitelistString, '', $relevantString);
+				} else {
+					$relevantString = str_replace ($whitelistString, '', $relevantString);
+				}
 			}
 			
 			# Strip punctuation characters connected to word boundaries
