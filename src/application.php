@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-15
- * Version 1.5.26
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
+ * Version 1.5.27
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1770,6 +1770,9 @@ class application
 	# Function to add an ordinal suffix to a number from 0-99 [from http://forums.devshed.com/t43304/s.html]
 	public static function ordinalSuffix ($number)
 	{
+		# Return the value unmodified if it is empty
+		if (!strlen ((string) $number)) {return $number;}
+		
 		# Obtain the last character in the number
 		$last = substr ($number, -1);
 		
@@ -3178,7 +3181,7 @@ class application
 			$databaseConnection->execute ($sql);
 			
 			# Load the cache
-			require_once ('database.php');		// Obtain from http://download.geog.cam.ac.uk/projects/database/
+			require_once ('database.php');
 			$cache = $databaseConnection->select ($database, 'spellcheckcache');
 			$originalCacheSize = count ($cache);
 		}
@@ -3433,6 +3436,16 @@ if (!function_exists ('mb_strtolower'))
 	function mb_strtolower ($string, $encoding)
 	{
 		return utf8_encode (strtolower (utf8_decode ($string)));
+	}
+}
+
+
+# Missing mb_ucfirst function; based on http://www.php.net/ucfirst#84122
+if (!function_exists ('mb_ucfirst')) {
+	if (function_exists ('mb_substr')) {
+		function mb_ucfirst ($string) {
+			return mb_strtoupper (mb_substr ($string, 0, 1)) . mb_substr ($string, 1);
+		}
 	}
 }
 
