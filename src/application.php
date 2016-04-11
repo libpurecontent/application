@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.27
+ * Version 1.5.28
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -187,6 +187,32 @@ class application
 				header ('HTTP/1.1 500 Internal Server Error');
 				break;
 		}
+	}
+	
+	
+	# Function to serve cache headers (304 Not modified header) instead of a resource; based on: http://www.php.net/header#61903
+	public function preferClientCache ($path)
+	{
+		# The server file path must exist and be readable
+		if (!is_readable ($path)) {return;}
+		
+		# Currently only supported on Apache
+		if (!function_exists ('apache_request_headers')) {return;}
+		
+		# Get headers sent by the client
+		$headers = apache_request_headers ();
+		
+		# End if no cache request header specified
+		if (!isSet ($headers['If-Modified-Since'])) {return;}
+		
+		# Is the client's local cache current?
+		if (strtotime ($headers['If-Modified-Since']) != filemtime ($path)) {return;}
+		
+		# Client's cache is current, so just respond '304 Not Modified'
+		header ('Last-Modified: '. gmdate ('D, d M Y H:i:s', filemtime ($path)) . ' GMT', true, 304);
+		
+		# End all execution
+		exit (0);
 	}
 	
 	
@@ -631,7 +657,7 @@ class application
 	}
 	
 	
-	# Function to get the first value in an array
+	# Function to get the first value in an array, whether the array is associative or not
 	public static function array_first_value ($array)
 	{
 		return reset ($array);	// Safe to do as this function receives a copy of the array
@@ -1646,6 +1672,19 @@ class application
 		
 		# Return the modified array
 		return $data;
+	}
+	
+	
+	# Function to add a value to the array if not already present, returning the new number of elements in the array
+	public function array_push_new (&$array, $value, $strict = false)
+	{
+		# Add if not already present
+		if (!in_array ($value, $array, $strict)) {
+			$array[] = $value;
+		}
+		
+		# Returns the new number of elements in the array
+		return count ($array);
 	}
 	
 	
