@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.28
+ * Version 1.5.29
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1898,25 +1898,46 @@ class application
 	
 	
 	# Function to regroup a data set into separate groups
-	public static function regroup ($data, $regroupByColumn, $removeGroupColumn = true, $regroupedColumnKnownUnique = false)
+	public static function regroup ($dataSet, $regroupByField, $removeGroupField = true, $regroupedColumnKnownUnique = false)
 	{
 		# Return the data unmodified if not an array or empty
-		if (!is_array ($data) || empty ($data)) {return $data;}
+		if (!is_array ($dataSet) || empty ($dataSet)) {return $dataSet;}
 		
 		# Rearrange the data
 		$rearrangedData = array ();
-		foreach ($data as $key => $values) {
-			$grouping = $values[$regroupByColumn];
-			if ($removeGroupColumn) {
-				unset ($data[$key][$regroupByColumn]);
+		foreach ($dataSet as $recordId => $record) {
+			$grouping = $record[$regroupByField];
+			if ($removeGroupField) {
+				unset ($dataSet[$recordId][$regroupByField]);
 			}
 			
 			# Add the data; if the regroup-by column is known to be unique, then don't create a nested array
 			if ($regroupedColumnKnownUnique) {
-				$rearrangedData[$grouping] = $data[$key];
+				$rearrangedData[$grouping] = $dataSet[$recordId];
 			} else {
-				$rearrangedData[$grouping][$key] = $data[$key];
+				$rearrangedData[$grouping][$recordId] = $dataSet[$recordId];
 			}
+		}
+		
+		# Return the data
+		return $rearrangedData;
+	}
+	
+	
+	# Function to reindex a dataset by a specified key within each record
+	public static function reindex ($dataSet, $reindexByField, $removeIndexField = true)
+	{
+		# Return the data unmodified if not an array or empty
+		if (!is_array ($dataSet) || empty ($dataSet)) {return $dataSet;}
+		
+		# Rearrange the data
+		$rearrangedData = array ();
+		foreach ($dataSet as $recordId => $record) {
+			$newRecordId = $record[$reindexByField];
+			if ($removeIndexField) {
+				unset ($record[$reindexByField]);
+			}
+			$rearrangedData[$newRecordId] = $record;
 		}
 		
 		# Return the data
