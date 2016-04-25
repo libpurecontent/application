@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.29
+ * Version 1.5.30
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -2905,7 +2905,7 @@ class application
 	
 	
 	# Function create a zip/gzip file on-the-fly; see: http://stackoverflow.com/questions/1061710/
-	public static function createZip ($inputFile, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */, $format = 'zip' /* or gz */)
+	public static function createZip ($inputFile /* Or, for zip format, an array of files, as array (asFilename => inputFile) */, $asFilename, $saveToDirectory = false /* or full directory path, slash-terminated */, $format = 'zip' /* or gz */)
 	{
 		# Prepare file, using a tempfile
 		$tmpFile = tempnam (sys_get_temp_dir(), 'temp' . self::generatePassword ($length = 6, true));
@@ -2933,7 +2933,13 @@ class application
 			case 'zip':
 				$zip = new ZipArchive ();
 				$zip->open ($tmpFile, ZipArchive::OVERWRITE);
-				$zip->addFile ($inputFile, $asFilename);
+				if (is_array ($inputFile)) {
+					foreach ($inputFile as $asFilenameEntry => $inputFileEntry) {
+						$zip->addFile ($inputFileEntry, $asFilenameEntry);
+					}
+				} else {
+					$zip->addFile ($inputFile, $asFilename);
+				}
 				$zip->close ();
 				$mimeType = 'application/zip';
 				break;
