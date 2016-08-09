@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.30
+ * Version 1.5.31
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -3210,7 +3210,7 @@ class application
 	
 	# Function to provide spell-checking of a dataset and provide alternatives
 	# Package dependencies: php5-enchant hunspell-ru
-	public static function spellcheck ($strings, $languageTag, $databaseConnection = false, $database = false, $enableSuggestions = true, $whitelistStrings = array (), $protectBlockRegexp = false, $testFirst = 0, $suggestionsImplodeString = '&#10;', $ignoreItalicised = true)
+	public static function spellcheck ($strings, $languageTag, $protectedSubstringsRegexp = false, $databaseConnection = false /* for caching */, $database = false, $enableSuggestions = true)
 	{
 		# Prevent timeouts for large datasets
 		if (count ($strings) > 50) {
@@ -3226,11 +3226,6 @@ class application
 			return $strings;
 		}
 		$d = enchant_broker_request_dict ($r, $languageTag);
-		
-		# If testing, test only first slice of the array
-		if ($testFirst) {
-			$strings = array_slice ($strings, 0, $testFirst, true);	// Return only the tested portion, not all
-		}
 		
 		# Use a database cache if required
 		$cache = array ();
@@ -3255,30 +3250,19 @@ class application
 		# Loop through each record
 		foreach ($strings as $id => $string) {
 			
-			# Strip protected block if required, leaving only the relevant section
+			# Branch
 			$relevantString = $string;
-			if ($protectBlockRegexp) {
-				$delimeter = '@';
-				$relevantString = preg_replace ($delimeter . addcslashes ($protectBlockRegexp, $delimeter) . $delimeter . 'u', '', $string);
-			}
 			
-			# If a string whitelist has been supplied, strip from consideration
-			foreach ($whitelistStrings as $whitelistString) {
-				if (preg_match ('|^/.+/i?$|', $whitelistString)) {
-					$relevantString = preg_replace ($whitelistString, '', $relevantString);
-				} else {
-					$relevantString = str_replace ($whitelistString, '', $relevantString);
-				}
+			# If substring protection is required, strip from consideration
+			if ($protectedSubstringsRegexp) {
+				$relevantString = preg_replace ('/' . addcslashes ($protectedSubstringsRegexp, '/') . '/', '', $relevantString);
 			}
 			
 			# Strip punctuation characters connected to word boundaries
+			$relevantString = preg_replace ("/(^)\p{P}/u", '\1', $relevantString);
 			$relevantString = preg_replace ("/(\s)\p{P}/u", '\1', $relevantString);
 			$relevantString = preg_replace ("/\p{P}(\s)/u", '\1', $relevantString);
-			
-			# If required, skip checking of words in italics, which can be regarded as proper nouns (e.g. species); this is done at whole-string level, rather than word-based, as italics may surround multiple words
-			if ($ignoreItalicised) {
-				$relevantString = preg_replace ('|<em>(.+)</em>|uU', '', $relevantString);		// Uses /U ungreedy, to avoid "a <em>b</em> c <em>d</em> e" becoming "a  e"
-			}
+			$relevantString = preg_replace ("/\p{P}($)/u", '\1', $relevantString);
 			
 			# Extract words from the string words, splitting by whitespace
 			$words = preg_split ('/\s+/', trim ($relevantString), -1, PREG_SPLIT_NO_EMPTY);
@@ -3323,6 +3307,7 @@ class application
 					}
 					
 					# Format
+					$suggestionsImplodeString = '&#10;';
 					$suggestions = ($suggestions ? 'Suggestions:' . $suggestionsImplodeString . implode ($suggestionsImplodeString, explode ('|', $suggestions)) : '[No suggestions]');
 				}
 				
