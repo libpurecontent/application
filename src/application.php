@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.31
+ * Version 1.5.32
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -75,6 +75,7 @@ class application
 	
 	
 	# Function to deal with errors
+	#!# To be deleted after frontControllerApplication 1.10.0 release
 	public function throwError ($number, $diagnosisDetails = '')
 	{
 		# Define the default error message if the specified error number does not exist
@@ -664,6 +665,13 @@ class application
 	}
 	
 	
+ 	# Function to get the last value in an array, whether the array is associative or not
+	public static function array_last_value ($array)
+	{
+		return end ($array);    // Safe to do as this function receives a copy of the array
+	}
+	
+	
 	# Function to trim all values in an array; recursive values are also handled
 	public static function arrayTrim ($array, $trimKeys = false)
 	{
@@ -739,6 +747,23 @@ class application
 		$checkKeysUniqueComparison = create_function ('$value', 'if ($value > 1) return true;');
 		$result = array_keys (array_filter (array_count_values ($array), $checkKeysUniqueComparison));
 		return $result;
+	}
+	
+	
+	# Function to return an associative array of all values in an array that have duplicates; based on: http://stackoverflow.com/a/6461117
+	public static function array_duplicate_values_all_keyed ($array)
+	{
+		# Get the unique values, preserving keys; this effectively eliminates later items whose value was present earlier in the array
+		$unique = array_unique ($array);
+		
+		# Get the duplicate values; this effectively gives the later items whose value was present earlier in the array
+		$duplicates = array_diff_assoc ($array, $unique);
+		
+		# Filter out any value which is in the duplicates list; this fully clears the array of any values that exist more than once
+		$duplicates = array_intersect ($array, $duplicates);
+		
+		# Return the array of the items that have duplicates, with both (or more) present
+		return $duplicates;
 	}
 	
 	
