@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.32
+ * Version 1.5.33
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -824,8 +824,17 @@ class application
 	
 	
 	# Function to construct a string (from a simple array) as 'A, B, and C' rather than 'A, B, C'
-	public static function commaAndListing ($list)
+	public static function commaAndListing ($list, $stripStartingWords = array ())
 	{
+		# If a starting word list is defined, strip these words from each entry
+		if ($stripStartingWords) {
+			foreach ($list as $index => $entry) {
+				foreach ($stripStartingWords as $stripStartingWord) {
+					$list[$index] = preg_replace ('/^' . preg_quote ($stripStartingWord . ' ', '/') . '/', '', $entry);
+				}
+			}
+		}
+		
 		# If there is more than one item, extract the last item
 		$totalItems = count ($list);
 		$moreThanOneItem = ($totalItems > 1);
@@ -3235,7 +3244,7 @@ class application
 	
 	# Function to provide spell-checking of a dataset and provide alternatives
 	# Package dependencies: php5-enchant hunspell-ru
-	public static function spellcheck ($strings, $languageTag, $protectedSubstringsRegexp = false, $databaseConnection = false /* for caching */, $database = false, $enableSuggestions = true)
+	public static function spellcheck ($strings, $languageTag, $protectedSubstringsRegexp = false, $databaseConnection = false /* for caching */, $database = false, $enableSuggestions = true, $addToDictionary = array ())
 	{
 		# Prevent timeouts for large datasets
 		if (count ($strings) > 50) {
@@ -3251,6 +3260,13 @@ class application
 			return $strings;
 		}
 		$d = enchant_broker_request_dict ($r, $languageTag);
+		
+		# If additional words to add to the dictionary are specified, add them to this session
+		if ($addToDictionary) {
+			foreach ($addToDictionary as $word) {
+				enchant_dict_add_to_session ($d, $word);
+			}
+		}
 		
 		# Use a database cache if required
 		$cache = array ();
