@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.33
+ * Version 1.5.34
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -465,14 +465,14 @@ class application
 	*/
 	
 	
-	# Trucation algorithm
+	# Trucation algorithm; this is multibyte safe and uses mb_
 	public static function str_truncate ($string, $characters, $moreUrl, $override = '<!--more-->', $respectWordBoundaries = true)
 	{
 		# End false if $characters is non-numeric or zero
 		if (!$characters || !is_numeric ($characters)) {return false;}
 		
 		# Return the string without modification if it is under the character limit
-		if ($characters > strlen ($string)) {return $string;}
+		if ($characters > mb_strlen ($string)) {return $string;}
 		
 		# If the override string is there, break at that point
 		if ($override && substr_count ($string, $override)) {
@@ -490,19 +490,19 @@ class application
 				foreach ($pieces as $piece) {
 					$approvedPieces[] = $piece;
 					$newString = implode (' ', $approvedPieces);
-					if (strlen ($newString) >= $characters) {
+					if (mb_strlen ($newString) >= $characters) {
 						break;	// Stop adding more pieces
 					}
 				}
 				
 			# Simple character mode
 			} else {
-				$newString = substr ($string, 0, $characters);
+				$newString = mb_substr ($string, 0, $characters);
 			}
 		}
 		
 		# Add the more link (except if the word chunking is just over the boundary resulting in the string being the same)
-		if (strlen ($newString) != strlen ($string)) {
+		if (mb_strlen ($newString) != mb_strlen ($string)) {
 			$moreHtml = " <span class=\"comment\">...&nbsp;<a href=\"{$moreUrl}\">[more]</a></span>";
 			$newString .= $moreHtml;
 		}
@@ -2446,6 +2446,49 @@ class application
 		
 		# Return the result
 		return array ($headerLine, $dataLine);
+	}
+	
+	
+	# Helper function to parse out blocks in a text file to an array
+	public static function parseBlocks ($string, $fieldnames /* to allocate, in order of appearance in each block */, $firstFieldIsId, &$error = false)
+	{
+		# Strip comments (hash then space)
+		$string = preg_replace ("/^#\s+(.*)$/m", '', $string);
+		
+		# Normalise to single line between each block
+		$string = str_replace ("\r\n", "\n", $string);
+		while (substr_count ($string, "\n\n\n")) {
+			$string = str_replace ("\n\n\n", "\n\n", trim ($string));
+		}
+		
+		# Parse out to blocks
+		$blocks = explode ("\n\n", $string);
+		
+		# Count fieldnames to enable a count that each block matches
+		$totalFieldnames = count ($fieldnames);
+		
+		# Parse out each test block
+		$results = array ();
+		foreach ($blocks as $index => $block) {
+			$result = array ();
+			$lines = explode ("\n", $block, count ($fieldnames));
+			if (count ($lines) != $totalFieldnames) {
+				$error = 'In block #' . ($index + 1) . ', the number of fields was incorrect.';
+				return false;
+			}
+			foreach ($fieldnames as $index => $fieldname) {
+				$result[$fieldname] = $lines[$index];
+			}
+			
+			# Index by IDs defined in data or index
+			$id = ($firstFieldIsId ? $lines[0] : $index);
+			
+			# Register the result
+			$results[$id] = $result;
+		}
+		
+		# Return the results
+		return $results;
 	}
 	
 	
