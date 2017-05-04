@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-16
- * Version 1.5.34
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-17
+ * Version 1.5.35
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -170,6 +170,10 @@ class application
 				
 			case '401':
 				header ('HTTP/1.0 401 Authorization Required');
+				break;
+				
+			case '403':
+				header ('HTTP/1.0 403 Forbidden');
 				break;
 				
 			case '404':
@@ -1050,7 +1054,7 @@ class application
 	
 	
 	# Function to e-mail changes between two arrays
-	public static function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false)
+	public static function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false, $extraText)
 	{
 		# End if no changes
 		if (!$changedFields = self::array_changed_values_fields ($before, $after)) {return;}
@@ -1065,6 +1069,11 @@ class application
 		$message .= "\n\n" . print_r ($beforeChanged, true);
 		$message .= "\n\n\nAfter:";
 		$message .= "\n\n" . print_r ($afterChanged, true);
+		
+		# Add extra text if required
+		if ($extraText) {
+			$message .= "\n\n" . $extraText;
+		}
 		
 		# Send the e-mail
 		$mailheaders  = 'From: ' . ($applicationName ? $applicationName : __CLASS__) . ' <' . $administratorEmail . '>';
@@ -1213,6 +1222,42 @@ class application
 		
 		# Return the changed field names
 		return $changedFields;
+	}
+	
+	
+	# Function to get the common domain between two domain names; e.g. "www.example.com" and "foo.example.com" would return "example.com"
+	public static function commonDomain ($domain1, $domain2)
+	{
+		# Tokenise by .
+		$domain1 = explode ('.', $domain1);
+		$domain2 = explode ('.', $domain2);
+		
+		# Reverse order
+		$domain1 = array_reverse ($domain1);
+		$domain2 = array_reverse ($domain2);
+		
+		# Traverse through the two lists
+		$i = 0;
+		$commonDomainList = array ();	// Empty by default
+		while (true) {
+			
+			# Compile the domain to this point as a string
+			$commonDomain = implode ('.', array_reverse ($commonDomainList));
+			
+			# If either are not present, end at this point
+			if (!isSet ($domain1[$i]) || !isSet ($domain2[$i])) {
+				return $commonDomain;
+			}
+			
+			# If they do not match, end at this point
+			if ($domain1[$i] != $domain2[$i]) {
+				return $commonDomain;
+			}
+			
+			# Iterate to next, registering the path so far
+			$commonDomainList[] = $domain1[$i];
+			$i++;
+		}
 	}
 	
 	
@@ -3581,6 +3626,27 @@ if (!function_exists ('mb_ucfirst')) {
 		function mb_ucfirst ($string) {
 			return mb_strtoupper (mb_substr ($string, 0, 1)) . mb_substr ($string, 1);
 		}
+	}
+}
+
+# Missing mb_str_split function; based on http://php.net/str-split#117112
+if (!function_exists ('mb_str_split')) {
+    if (function_exists ('mb_substr')) {
+		function mb_str_split ($string, $split_length = 1)
+	    {
+	        if ($split_length == 1) {
+	            return preg_split ("//u", $string, -1, PREG_SPLIT_NO_EMPTY);
+	        } elseif ($split_length > 1) {
+	            $return_value = [];
+	            $string_length = mb_strlen ($string, 'UTF-8');
+	            for ($i = 0; $i < $string_length; $i += $split_length) {
+	                $return_value[] = mb_substr ($string, $i, $split_length, "UTF-8");
+	            }
+	            return $return_value;
+	        } else {
+	            return false;
+	        }
+	    }
 	}
 }
 
