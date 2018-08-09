@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-17
- * Version 1.5.35
+ * Version 1.5.36
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1830,7 +1830,7 @@ class application
 	
 	
 	# Function to check the fieldnames in an associative array are consistent, and to return a list of them
-	public static function arrayFieldsConsistent ($dataSet)
+	public static function arrayFieldsConsistent ($dataSet, &$failureAt = array ())
 	{
 		# Return an empty array if the dataset is empty
 		if (!$dataSet) {return array ();}
@@ -1842,6 +1842,7 @@ class application
 			# Check that the field list (including order) is consistent across every record
 			if (isSet ($cachedFieldList)) {
 				if ($fieldnames !== $cachedFieldList) {
+					$failureAt = $data;
 					return false;
 				}
 			}
@@ -2538,22 +2539,67 @@ class application
 	
 	
 	# Function to convert a text block to a list
-	public static function textareaToList ($string)
+	public static function textareaToList ($string, $isFile = false, $stripComments = false, $longerFirst = false)
 	{
+		# Load as a file instead of string if required
+		if ($isFile) {
+			$string = file_get_contents ($string);
+		}
+		
+		# Trim the value
+		$string = trim ($string);
+		
 		# End if none
 		if (!strlen ($string)) {return array ();}
 		
-		# Create a list of items
-		$list = array ();
-		$items = explode ("\n", $string);
-		foreach ($items as $item) {
-			$item = trim ($item);
-			if (!strlen ($item)) {continue;}	// Skip empty lines
-			$list[] = $item;
+		# Split by newline
+		$string = str_replace ("\r\n", "\n", $string);
+		$list = explode ("\n", $string);
+		
+		# Trim each line
+		foreach ($list as $index => $line) {
+			$list[$index] = trim ($line);
 		}
+		
+		# Strip empty lines
+		foreach ($list as $index => $line) {
+			if (!strlen ($line)) {unset ($list[$index]);}
+		}
+		
+		# Strip comments if required
+		if ($stripComments) {
+			foreach ($list as $index => $line) {
+				if (preg_match ('/^#/', $line)) {unset ($list[$index]);}
+			}
+		}
+		
+		# If required, order the values so that longer (string-length) values come first, making it safe for multiple replacements
+		if ($longerFirst) {
+			usort ($list, array ('self', 'lengthDescValueSort'));
+		}
+		
+		# Reindex to ensure starting from 0, following line stripping and possible longer-first operations
+		$list = array_values ($list);
 		
 		# Return the list
 		return $list;
+	}
+	
+	
+	# Helper function to sort by string length descending then by value, for use in a callback; see: https://stackoverflow.com/a/16311030/180733
+	private static function lengthDescValueSort ($a, $b)
+	{
+		# Obtain the lenghts
+		$la = mb_strlen ($a);
+		$lb = mb_strlen ($b);
+		
+		# If same length, compare by value; uses case-insensitive searching - not actually necessary, just nicer for debugging
+		if ($la == $lb) {
+			return strcasecmp ($a, $b);		// Is binary-safe
+		}
+		
+		# Otherwise compare by string length descending
+		return $lb - $la;
 	}
 	
 	
@@ -3291,7 +3337,7 @@ class application
 		}
 		
 		# Convert to PDF; see options at http://wkhtmltopdf.org/usage/wkhtmltopdf.txt
-		$command = "wkhtmltopdf --print-media-type {$inputFile} {$outputFile}";
+		$command = "wkhtmltopdf --encoding 'utf-8' --print-media-type {$inputFile} {$outputFile}";
 		exec ($command, $output, $returnValue);
 		$result = (!$returnValue);
 		
@@ -3480,6 +3526,40 @@ class application
 					break;
 				}
 			}
+		}
+		
+		# Return the result
+		return $result;
+	}
+	
+	
+	# Function to convert a Roman numeral to an integer; see: https://stackoverflow.com/a/6266158/180733
+	public static function romanNumeralToInt ($romanNumeralString)
+	{
+		# Define roman numeral combinations, in precedence order
+		$romans = array(
+		    'M'		=> 1000,
+		    'CM'	=> 900,
+		    'D'		=> 500,
+		    'CD'	=> 400,
+		    'C'		=> 100,
+		    'XC'	=> 90,
+		    'L'		=> 50,
+		    'XL'	=> 40,
+		    'X'		=> 10,
+		    'IX'	=> 9,
+		    'V'		=> 5,
+		    'IV'	=> 4,
+		    'I'		=> 1,
+		);
+		
+		# Work from the left and increment the result
+		$result = 0;
+		foreach ($romans as $key => $value) {
+		    while (strpos ($romanNumeralString, $key) === 0) {
+		        $result += $value;
+		        $romanNumeralString = substr ($romanNumeralString, strlen ($key));
+		    }
 		}
 		
 		# Return the result
