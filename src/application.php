@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-17
- * Version 1.5.36
+ * Version 1.5.37
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -663,6 +663,7 @@ class application
 	
 	
 	# Function to get the first value in an array, whether the array is associative or not
+	#!# PHP 7.3 now has array_value_first - should replace this function with a global function and migrate callers
 	public static function array_first_value ($array)
 	{
 		return reset ($array);	// Safe to do as this function receives a copy of the array
@@ -670,6 +671,7 @@ class application
 	
 	
  	# Function to get the last value in an array, whether the array is associative or not
+	#!# PHP 7.3 now has array_value_last - should replace this function with a global function and migrate callers
 	public static function array_last_value ($array)
 	{
 		return end ($array);    // Safe to do as this function receives a copy of the array
@@ -1054,7 +1056,7 @@ class application
 	
 	
 	# Function to e-mail changes between two arrays
-	public static function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false, $extraText)
+	public static function mailChanges ($administratorEmail, $changedBy, $before, $after, $databaseReference, $emailSubject, $applicationName = false, $replyTo = false, $extraText = false)
 	{
 		# End if no changes
 		if (!$changedFields = self::array_changed_values_fields ($before, $after)) {return;}
@@ -1266,7 +1268,8 @@ class application
 	public static function validEmail ($email, $domainPartOnly = false)
 	{
 		# Define the regexp; regexp taken from www.zend.com/zend/spotlight/ev12apr.php but with ' added to local part
-		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[\'-_a-z0-9\$\+]+(\.[\'-_a-z0-9\$\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,6})$';
+		# TLD lengths: https://jasontucker.blog/8945/what-is-the-longest-tld-you-can-get-for-a-domain-name
+		$regexp = '^' . ($domainPartOnly ? '[@]?' : '[\'-_a-z0-9\$\+]+(\.[\'-_a-z0-9\$\+]+)*@') . '[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,24})$';
 		
 		# If not an array, perform the check and return the result
 		if (!is_array ($email)) {
@@ -1369,8 +1372,9 @@ class application
 			}
 			
 			# Fallback to mt_rand if PHP <5.3 or no OpenSSL available
+			#!# This block can be removed now that PHP 5.3+ is widespread; also the characters list is inconsistent with bin2hex anyway and should be [a-f]
 			$characters = '0123456789';
-			$characters .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/+'; 
+			$characters .= 'abcdef'; 
 			$charactersLength = strlen ($characters) - 1;
 			$password = '';
 			for ($i = 0; $i < $length; $i++) {
@@ -3327,6 +3331,7 @@ class application
 		file_put_contents ($inputFile, $html);
 		
 		# Determine whether to output the file; if this is a filename without a directory name, output to browser; if there is a directory path, treat as a save
+		#!# Need to enable $filename to be false for a temporary file, e.g. by running $filename = application::generatePassword (20);
 		$save = ($filename != basename ($filename));	// Determine if there is a directory component
 		
 		# Determine location of the PDF output file (which may be a tempfile)
@@ -3567,14 +3572,14 @@ class application
 	}
 	
 	
-	# Function to handle running a python process securely without writing out any files
+	# Function to handle running a command process securely without writing out any files
 	public static function createProcess ($command, $string)
 	{
 		# Set the descriptors
 		$descriptorspec = array (
 			0 => array ('pipe', 'r'),  // stdin is a pipe that the child will read from
 			1 => array ('pipe', 'w'),  // stdout is a pipe that the child will write to
-			// 2 => array ('file', '/tmp/error-output.txt', 'a') // stderr is a file to write to
+			// 2 => array ('file', '/tmp/error-output.txt', 'a'), // stderr is a file to write to - uncomment this line for debugging
 		);
 		
 		# Assume failure unless the command works
