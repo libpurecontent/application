@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-17
- * Version 1.5.37
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-19
+ * Version 1.5.38
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -800,6 +800,41 @@ class application
 				}
 			}
 		}
+	}
+	
+	
+	# Function to create an array of all combinations in a set of associative arrays, acting on their keys (not their value labels); adapted from https://gist.github.com/cecilemuller/4688876
+	public static function array_key_combinations ($arrays, $keyConcatCharacter = '_', $valueConcatCharacter = ' - ')
+	{
+		$result = array (array ());
+		foreach ($arrays as $property => $property_values) {
+			$tmp = array ();
+			foreach ($result as $result_item) {
+				foreach ($property_values as $key => $value) {
+					$result_item[$property] = $key;
+					$tmp[] = $result_item;
+				}
+			}
+			$result = $tmp;
+		}
+		
+		# Reindex with a concatenation character
+		$resultKeyed = array ();
+		foreach ($result as $index => $fields) {
+			$key = implode ($keyConcatCharacter, $fields);
+			$resultKeyed[$key] = $fields;
+		}
+		
+		# Compile the labels
+		foreach ($resultKeyed as $key => $fields) {
+			foreach ($fields as $field => $keyValue) {
+				$fields[$field] = $arrays[$field][$keyValue];	// Substitute in the label
+			}
+			$resultKeyed[$key] = implode ($valueConcatCharacter, $fields);
+		}
+		
+		# Return the result
+		return $resultKeyed;
 	}
 	
 	
@@ -3324,7 +3359,7 @@ class application
 	
 	
 	# Function to convert an HTML extract to a PDF; uses http://wkhtmltopdf.org/
-	public static function html2pdf ($html, $filename /* Either a filename used for temp download, or a trusted full path where the file will be saved */)
+	public static function html2pdf ($html, $filename /* Either a filename used for temp download, or a trusted full path where the file will be saved; NB filename will be picked up by the browser if doing a save from an embedded PDF viewer */)
 	{
 		# Create the HTML as a tempfile
 		$inputFile = tempnam (sys_get_temp_dir (), 'tmp') . '.html';	// wkhtmltopdf requires a .html extension for the input file
