@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-19
- * Version 1.5.38
+ * Version 1.5.39
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -3497,7 +3497,7 @@ class application
 					$isCorrect = $cache[$word]['isCorrect'];	// Read from cache if present
 				} else {
 					$isCorrect = enchant_dict_check ($d, $word);
-					$cache[$word]['isCorrect'] = $isCorrect;	// Add to cache
+					$cache[$word]['isCorrect'] = ($isCorrect ? '1' : '0');	// Add to cache; cast boolean as numeric for INT(1) storage
 					if ($isCorrect) {
 						$cache[$word]['suggestions'] = NULL;	// Since the $enableSuggestions phase will not be reached, leaving holes in some array entries
 					}
