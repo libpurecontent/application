@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-20
- * Version 1.5.40
+ * Version 1.5.41
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -470,7 +470,7 @@ class application
 	
 	
 	# Trucation algorithm; this is multibyte safe and uses mb_
-	public static function str_truncate ($string, $characters, $moreUrl, $override = '<!--more-->', $respectWordBoundaries = true)
+	public static function str_truncate ($string, $characters, $moreUrl, $override = '<!--more-->', $respectWordBoundaries = true, $htmlMode = true)
 	{
 		# End false if $characters is non-numeric or zero
 		if (!$characters || !is_numeric ($characters)) {return false;}
@@ -507,7 +507,11 @@ class application
 		
 		# Add the more link (except if the word chunking is just over the boundary resulting in the string being the same)
 		if (mb_strlen ($newString) != mb_strlen ($string)) {
-			$moreHtml = " <span class=\"comment\">...&nbsp;<a href=\"{$moreUrl}\">[more]</a></span>";
+			if ($htmlMode) {
+				$moreHtml = " <span class=\"comment\">...&nbsp;<a href=\"{$moreUrl}\">[more]</a></span>";
+			} else {
+				$moreHtml = '...';
+			}
 			$newString .= $moreHtml;
 		}
 		
@@ -839,6 +843,35 @@ class application
 		
 		# Return the result
 		return $resultKeyed;
+	}
+	
+	
+	# Function to convert booleans to ticks in a data table
+	public static function booleansToTicks ($data, $fields)
+	{
+		# Determine the boolean fields
+		$booleanFields = array ();
+		foreach ($fields as $field => $attributes) {
+			if (($attributes['Type'] == 'int(1)') || ($attributes['Type'] == 'tinyint')) {	// TINYINT for MySQL >=8
+				$booleanFields[] = $field;
+			}
+		}
+		
+		# Convert 1 to tick
+		if ($booleanFields) {
+			foreach ($data as $index => $record) {
+				foreach ($record as $field => $value) {
+					if (in_array ($field, $booleanFields)) {
+						if ($value == '1') {
+							$data[$index][$field] = "\u{2714}";	// tick
+						}
+					}
+				}
+			}
+		}
+		
+		# Return the data
+		return $data;
 	}
 	
 	
