@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-20
- * Version 1.5.41
+ * Version 1.5.42
  * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -1237,7 +1237,7 @@ class application
 			
 			# Create the mail object using the Mail::factory method 
 			require_once ('Mail.php');
-			$mailObject =& Mail::factory ('smtp', $smtpAuthCredentials);
+			$mailObject = Mail::factory ('smtp', $smtpAuthCredentials);
 			
 			# Send the mail
 			$mailObject->send ($to, $headersArray, $message);
@@ -1483,6 +1483,7 @@ class application
 	
 	
 	# Function to extract the title of the page in question by opening the first $startingCharacters characters of the file and extracting what's between the <$tag> tags
+	#!# $startingCharacters is ignored
 	public static function getTitleFromFileContents ($html, $startingCharacters = 100, $tag = 'h1')
 	{
 		# Define the starting and closing tags
@@ -3676,6 +3677,49 @@ class application
 	}
 	
 	
+	# Function to create a jumplist form
+	#!# Needs support for nested lists
+	public static function htmlJumplist ($values /* will have htmlspecialchars applied to both keys and values */, $selected = '', $action = '', $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = 'Go to:', $valueSubstitution = false, $onchangeJavascript = true)
+	{
+		# Return an empty string if no items
+		if (empty ($values)) {return '';}
+		
+		# Prepare the tab string
+		$tabs = str_repeat ("\t", ($parentTabLevel));
+		
+		# Build the list; note that the visible value can never have tags within (e.g. <span>): https://stackoverflow.com/questions/5678760
+		foreach ($values as $value => $visible) {
+			$fragments[] = '<option value="' . ($valueSubstitution ? str_replace ('%value', htmlspecialchars ($value), $valueSubstitution) : htmlspecialchars ($value)) . '"' . ($value == $selected ? ' selected="selected"' : '') . '>' . htmlspecialchars ($visible) . '</option>';
+		}
+		
+		# Construct the HTML
+		$html  = "\n\n$tabs" . "<div class=\"$class\">";
+		$html .= "\n\n$tabs" . $introductoryText;
+		$html .= "\n$tabs\t" . '<form method="post" action="' . htmlspecialchars ($action) . "\" name=\"$name\">";
+		$html .= "\n$tabs\t\t" . "<select name=\"$name\"" . ($onchangeJavascript ? ' onchange="window.location.href/*stopBots*/=this[selectedIndex].value"' : '') . '>';	// The inline 'stopBots' javascript comment is an attempt to stop rogue bots picking up the "href=" text
+		$html .= "\n$tabs\t\t\t" . implode ("\n$tabs\t\t\t", $fragments);
+		$html .= "\n$tabs\t\t" . '</select>';
+		$html .= "\n$tabs\t\t" . '<noscript><input type="submit" value="Go!" class="button" /></noscript>';
+		$html .= "\n$tabs\t" . '</form>';
+		$html .= "\n$tabs" . '</div>' . "\n";
+		
+		# If posted, jump, adding the current site's URL if the target doesn't start with http(s)://
+		if (isSet ($_POST[$name])) {
+			$location = (preg_match ('~(http|https)://~i', $_POST[$name]) ? '' : $_SERVER['_SITE_URL']) . $_POST[$name];
+			$html = self::sendHeader (302, $location, $redirectMessage = true);
+		}
+		
+		# Return the result
+		return $html;
+	}
+	
+	
+	# Function to process the jumplist
+	public static function jumplistProcessor ($name = 'jumplist')
+	{
+return '';
+	}
+	
 	
 	# Function to convert ereg to preg
 	public static function pereg ($pattern, $string)
@@ -3766,6 +3810,13 @@ if ( !function_exists('htmlspecialchars_decode') )
 	}
 }
 
+# Polyfill for str_contains (natively available from PHP 8.0); see: https://php.watch/versions/8.0/str_contains
+if (!function_exists ('str_contains')) {
+    function str_contains (string $haystack, string $needle)
+	{
+        return (('' === $needle) || (false !== strpos ($haystack, $needle)));
+    }
+}
 
 # Emulation of mb_strtolower for UTF-8 compliance; based on http://www.php.net/strtolower#90871
 if (!function_exists ('mb_strtolower'))
