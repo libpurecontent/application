@@ -1,9 +1,9 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-20
- * Version 1.5.42
- * Distributed under the terms of the GNU Public Licence - www.gnu.org/copyleft/gpl.html
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-21
+ * Version 1.5.43
+ * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
  */
@@ -2054,6 +2054,21 @@ class application
 	}
 	
 	
+	# Function to format bytes
+	public static function formatBytes ($bytes)
+	{
+		# Select either MB or KB
+		if ($bytes > (1024*1024)) {
+			$result = max (1, round ($bytes / (1024*1024), 1)) . 'MB';
+		} else {
+			$result = max (1, round ($bytes / 1024)) . 'KB';
+		}
+		
+		# Return the result
+		return $result;
+	}
+	
+	
 	# Function to regroup a data set into separate groups
 	public static function regroup ($dataSet, $regroupByField, $removeGroupField = true, $regroupedColumnKnownUnique = false)
 	{
@@ -3427,7 +3442,7 @@ class application
 			if (file_exists ($outputFile)) {
 				unlink ($outputFile);
 			}
-			echo "\n<p class=\"warning\">Sorry, an error occured creating the PDF file.</p>";
+			echo "\n<p class=\"warning\">Sorry, an error occurred creating the PDF file.</p>";
 			return false;
 		}
 		
@@ -3749,28 +3764,6 @@ return '';
 
 
 
-# Ensure that the file_put_contents function exists - taken from http://cvs.php.net/viewvc.cgi/pear/PHP_Compat/Compat/Function/file_put_contents.php?revision=1.9&view=markup
-if (!function_exists('file_put_contents'))
-{
-	function file_put_contents ($filename, $content)
-	{
-	    $bytes = 0;
-	
-	    if (($file = fopen($filename, 'w+')) === false) {
-	        return false;
-	    }
-	
-	    if (($bytes = fwrite($file, $content)) === false) {
-	        return false;
-	    }
-	
-	    fclose($file);
-	
-	    return $bytes;
-	}
-}
-
-
 # Define an emulated mime_content_type function (if not using Windows) - taken from http://cvs.php.net/viewvc.cgi/pear/PHP_Compat/Compat/Function/mime_content_type.php?revision=1.6&view=markup
 if (!function_exists ('mime_content_type') && (!strstr (PHP_OS, 'WIN')))
 {
@@ -3801,15 +3794,6 @@ if (!function_exists ('mime_content_type') && (!strstr (PHP_OS, 'WIN')))
 }
 
 
-# Emulation of htmlspecialchars_decode; from http://uk.php.net/manual/en/function.htmlspecialchars-decode.php#68962
-if ( !function_exists('htmlspecialchars_decode') )
-{
-	function htmlspecialchars_decode($text)
-	{
-		return strtr($text, array_flip(get_html_translation_table(HTML_SPECIALCHARS)));
-	}
-}
-
 # Polyfill for str_contains (natively available from PHP 8.0); see: https://php.watch/versions/8.0/str_contains
 if (!function_exists ('str_contains')) {
     function str_contains (string $haystack, string $needle)
@@ -3818,7 +3802,7 @@ if (!function_exists ('str_contains')) {
     }
 }
 
-# Emulation of mb_strtolower for UTF-8 compliance; based on http://www.php.net/strtolower#90871
+# Emulation of mb_strtolower for UTF-8 compliance (natively available if Multibyte String extension installed); based on http://www.php.net/strtolower#90871
 if (!function_exists ('mb_strtolower'))
 {
 	function mb_strtolower ($string, $encoding)
@@ -3837,7 +3821,7 @@ if (!function_exists ('mb_ucfirst')) {
 	}
 }
 
-# Missing mb_str_split function; based on http://php.net/str-split#117112
+# Missing mb_str_split function (natively available from PHP 7.4 if Multibyte String extension installed); based on http://php.net/str-split#117112
 if (!function_exists ('mb_str_split')) {
     if (function_exists ('mb_substr')) {
 		function mb_str_split ($string, $split_length = 1)
