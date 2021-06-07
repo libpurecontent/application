@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-21
- * Version 1.5.43
+ * Version 1.5.44
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 4.1+ with register_globals set to 'off'
  * Download latest from: http://download.geog.cam.ac.uk/projects/application/
@@ -843,6 +843,23 @@ class application
 		
 		# Return the result
 		return $resultKeyed;
+	}
+	
+	
+	# Function to decode HTML entity values recursively through an associative array of any structure; NB this only changes values, not keys
+	public static function array_html_entity_decode ($array)
+	{
+		# Loop through the array, and recurse where a value is associative, otherwise decode
+		foreach ($array as $key => $value) {
+			if (!is_array ($value)) {
+				$array[$key] = html_entity_decode ($value);
+			} else {
+				$array[$key] = self::array_html_entity_decode ($value);
+			}
+		}
+		
+		# Return the modified array
+		return $array;
 	}
 	
 	
@@ -3729,13 +3746,6 @@ class application
 	}
 	
 	
-	# Function to process the jumplist
-	public static function jumplistProcessor ($name = 'jumplist')
-	{
-return '';
-	}
-	
-	
 	# Function to convert ereg to preg
 	public static function pereg ($pattern, $string)
 	{
@@ -3841,6 +3851,5 @@ if (!function_exists ('mb_str_split')) {
 	    }
 	}
 }
-
 
 ?>
