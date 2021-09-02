@@ -2,10 +2,10 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-21
- * Version 1.5.44
+ * Version 1.6.0
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 4.1+ with register_globals set to 'off'
- * Download latest from: http://download.geog.cam.ac.uk/projects/application/
+ * Download latest from: https://download.geog.cam.ac.uk/projects/application/
  */
 
 
@@ -16,16 +16,6 @@ require_once ('pureContent.php');
 # Class containing general application support static methods
 class application
 {
-	# Constructor
-	public function __construct ($applicationName, $errors, $administratorEmail)
-	{
-		# Make inputs global
-		$this->applicationName = $applicationName;
-		$this->errors = $errors;
-		$this->administratorEmail = $administratorEmail;
-	}
-	
-	
 	# Function to merge the arguments; note that $errors returns the errors by reference and not as a result from the method
 	public static function assignArguments (&$errors, $suppliedArguments, $argumentDefaults, $functionName, $subargument = NULL, $handleErrors = false)
 	{
@@ -71,27 +61,6 @@ class application
 		
 		# Return the arguments
 		return $arguments;
-	}
-	
-	
-	# Function to deal with errors
-	#!# To be deleted after frontControllerApplication 1.10.0 release
-	public function throwError ($number, $diagnosisDetails = '')
-	{
-		# Define the default error message if the specified error number does not exist
-		$errorMessage = (isSet ($this->errors[$number]) ? $this->errors[$number] : "A strange yet unknown error (#$number) has occurred.");
-		
-		# Show the error message
-		$userErrors[] = 'Error: ' . $errorMessage . ' The administrator has been notified of this problem.';
-		echo self::showUserErrors ($userErrors);
-		
-		# Assemble the administrator's error message
-		if ($diagnosisDetails != '') {$errorMessage .= "\n\nFurther information available: " . $diagnosisDetails;}
-		
-		# Mail the admininistrator
-		$subject = '[' . ucfirst ($this->applicationName) . '] error';
-		$message = 'The ' . $this->applicationName . " has an application error: please investigate. Diagnostic details are given below.\n\nApplication error $number:\n" . $errorMessage;
-		self::sendAdministrativeAlert ($this->administratorEmail, $this->applicationName, $subject, $message);
 	}
 	
 	
@@ -196,7 +165,7 @@ class application
 	
 	
 	# Function to serve cache headers (304 Not modified header) instead of a resource; based on: http://www.php.net/header#61903
-	public function preferClientCache ($path)
+	public static function preferClientCache ($path)
 	{
 		# The server file path must exist and be readable
 		if (!is_readable ($path)) {return;}
@@ -1501,7 +1470,7 @@ class application
 	
 	# Function to extract the title of the page in question by opening the first $startingCharacters characters of the file and extracting what's between the <$tag> tags
 	#!# $startingCharacters is ignored
-	public static function getTitleFromFileContents ($html, $startingCharacters = 100, $tag = 'h1')
+	public static function getTitleFromFileContents ($html, $startingCharacters = 100, $tag = 'h1', $asHtml = false)
 	{
 		# Define the starting and closing tags
 		$startingTag = "<{$tag}[^>]*>";
@@ -1513,11 +1482,15 @@ class application
 		# Trim
 		$title = trim ($temporary[1]);
 		
-		# Strip tags
-		$title = strip_tags ($title);
-		
-		# Un-decode entities
-		$title = htmlspecialchars_decode ($title);
+		# Process as text, unless HTML permitted
+		if (!$asHtml) {
+			
+			# Strip tags
+			$title = strip_tags ($title);
+			
+			# Un-decode entities
+			$title = htmlspecialchars_decode ($title);
+		}
 		
 		# Send the title back as the result
 		return $title;
@@ -1815,7 +1788,7 @@ class application
 	
 	
 	# Function to insert a value before another in order; either afterField or beforeField must be specified
-	public function array_insert_value ($array, $newFieldKey, $newFieldValue, $afterField = false, $beforeField = false)
+	public static function array_insert_value ($array, $newFieldKey, $newFieldValue, $afterField = false, $beforeField = false)
 	{
 		# Throw error if neither or both of after/before supplied
 		if (!$afterField && !$beforeField) {return false;}
@@ -1849,7 +1822,7 @@ class application
 	
 	
 	# Function to add a value to the array if not already present, returning the new number of elements in the array
-	public function array_push_new (&$array, $value, $strict = false)
+	public static function array_push_new (&$array, $value, $strict = false)
 	{
 		# Add if not already present
 		if (!in_array ($value, $array, $strict)) {
