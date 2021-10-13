@@ -832,6 +832,35 @@ class application
 	}
 	
 	
+	# Function to convert patterns in an array in the light of real data
+	# E.g. array ('a' => 'b', '/foo([0-9]+/)/' => '\1bar') with keys array ('foo1', 'foo2') will return array ('a' => 'b', 'foo1' => '1bar', 'foo2' => '2bar')
+	public static function expandPatternedArray ($array, $keysPresent)
+	{
+		# Start a replacement array; the original is not modified, as otherwise the ordering will be incorrect
+		$replacementArray = array ();
+		
+		# Loop through each entry
+		foreach ($array as $search => $replace) {
+			
+			# If not a regexp, register in the replacement array
+			if (!preg_match ('|^/.+/$|', $search)) {
+				$replacementArray[$search] = $replace;
+				continue;
+			}
+			
+			# Perform each substitution
+			foreach ($keysPresent as $keyPresent) {
+				if (preg_match ($search, $keyPresent, $matches)) {
+					$replacementArray[$keyPresent] = preg_replace ($search, $replace, $keyPresent);
+				}
+			}
+		}
+		
+		# Return the modified array
+		return $replacementArray;
+	}
+	
+	
 	# Function to convert booleans to ticks in a data table
 	public static function booleansToTicks ($data, $fields)
 	{
@@ -3353,6 +3382,30 @@ class application
 		
 		# Return unmodified if no match found
 		return $pluralWord;
+	}
+	
+	
+	# Function to romanise a string, e.g. an e acute becomes 'e'
+	public static function romaniseString ($string)
+	{
+		# Special cases
+		$specialCases = array (
+			"\u{00e4}"	 => 'ae',    // umlaut ä => ae
+			"\u{00f6}"	 => 'oe',    // umlaut ö => oe
+			"\u{00fc}"	 => 'ue',    // umlaut ü => ue
+			"\u{00c4}"	 => 'AE',    // umlaut Ä => AE
+			"\u{00d6}"	 => 'OE',    // umlaut Ö => OE
+			"\u{00dc}"	 => 'UE',    // umlaut Ü => UE
+			"\u{00f1}"	 => 'ny',    // ñ => ny
+			"\u{00ff}"	 => 'yu',    // ÿ => yu
+		);
+		$string = str_replace (array_keys ($specialCases), array_values ($specialCases), $string);
+		
+		# Romanise
+		$string = iconv ('UTF-8', 'ASCII//TRANSLIT', $string);
+		
+		# Return the string
+		return $string;
 	}
 	
 	
