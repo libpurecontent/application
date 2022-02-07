@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-21
- * Version 1.7.0
+ * Version 1.7.1
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -2667,6 +2667,31 @@ class application
 	}
 	
 	
+	# Function to convert a dataset to GeoJSON
+	public static function datasetToGeojson ($dataset, $geometryField = 'geometry')
+	{
+		# Start the GeoJSON
+		$geojson = array (
+			'type'		=> 'GeometryCollection',
+			'features'	=> array (),
+		);
+		
+		# Add each feature
+		foreach ($dataset as $feature) {
+			$properties = $feature;
+			unset ($properties[$geometryField]);
+			$geojson['features'][] = array (
+				'type'			=> 'Feature',
+				'properties'	=> $properties,
+				'geometry'		=> json_decode ($feature[$geometryField], true),
+			);
+		}
+		
+		# Return the GeoJSON
+		return $geojson;
+	}
+	
+	
 	# Helper function to parse out blocks in a text file to an array
 	public static function parseBlocks ($string, $fieldnames /* to allocate, in order of appearance in each block */, $firstFieldIsId, &$error = false)
 	{
@@ -3538,8 +3563,8 @@ class application
 			$outputFile = tempnam (sys_get_temp_dir (), 'tmp');		// Define a tempfile location for the created PDF
 		}
 		
-		# Convert to PDF; see options at http://wkhtmltopdf.org/usage/wkhtmltopdf.txt
-		$command = "wkhtmltopdf --encoding 'utf-8' --print-media-type {$inputFile} {$outputFile}";
+		# Convert to PDF; see options at https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
+		$command = "wkhtmltopdf --enable-local-file-access --encoding 'utf-8' --print-media-type {$inputFile} {$outputFile}";
 		exec ($command, $output, $returnValue);
 		$result = (!$returnValue);
 		
