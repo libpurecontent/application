@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-21
- * Version 1.7.1
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-22
+ * Version 1.8.0
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -1048,7 +1048,7 @@ class application
 	}
 	
 	
-	# Function to format free text
+	# Function to format free text as HTML
 	public static function formatTextBlock ($text, $paragraphClass = NULL)
 	{
 		# Do nothing if the text is empty
@@ -1170,7 +1170,7 @@ class application
 	
 	
 	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976 ; note that the From/To/Subject headers are only encoded to UTF-8 when they include non-ASCII characters (so that filtering is more likely to work)
-	public static function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */, $attachments = array () /* array of filenames */)
+	public static function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */, $attachments = array () /* array of filenames */, $forcePlainTextOnly = false)
 	{
 		# Add attachments if required, rewriting the message
 		if ($attachments) {
@@ -1178,10 +1178,24 @@ class application
 			$includeMimeContentTypeHeaders = false;
 		}
 		
-		# If the message is text+html, supplied as array ('text' => $text, 'html' => $htmlVersion), set this up; see https://krijnhoetmer.nl/stuff/php/html-plain-text-mail/
-		$isMultipart = false;
-		if (is_array ($message) && (count ($message) == 2) && isSet ($message['text']) && isSet ($message['html'])) {
-			$isMultipart = true;
+		# Determine if the message is text+html, supplied as array ('text' => $text, 'html' => $htmlVersion)
+		$isMultipart = (is_array ($message) && (count ($message) == 2) && isSet ($message['text']) && isSet ($message['html']));
+		
+		# Unless forcing plain text only, generate an HTML version of plain text and convert the message to multipart
+		if (!$forcePlainTextOnly) {
+			if (!$isMultipart) {
+				if (!$attachments) {	// #!# Not yet compatible with using attachments - need to add support; will stay as text only, plus the attachment
+					$message = array (
+						'text'	=> $message,
+						'html'	=> self::formatTextBlock (self::makeClickableLinks (htmlspecialchars ($message), $addMailto = true, false, $target = false)),
+					);
+					$isMultipart = true;
+				}
+			}
+		}
+		
+		# Assemble multipart message if required; see: https://krijnhoetmer.nl/stuff/php/html-plain-text-mail/
+		if ($isMultipart) {
 			$boundary = uniqid ('np');
 			$includeMimeContentTypeHeaders = 'multipart/alternative;boundary=' . $boundary;
 			
@@ -3819,7 +3833,7 @@ class application
 		}
 		
 		# Return false as the output if the return status is a failure
-		if ($returnStatus) {return false;}	// Unix return status >0 is failure
+#		if ($returnStatus) {return false;}	// Unix return status >0 is failure
 		
 		# Return the output
 		return $output;
