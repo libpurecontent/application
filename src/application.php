@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-22
- * Version 1.8.1
+ * Version 1.8.2
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -2208,6 +2208,46 @@ class application
 		
 		# Return the data
 		return $rearrangedData;
+	}
+	
+	
+	# Function to expand a JSON field within a dataset, ensuring consistent columns in the result
+	public static function expandPackedField ($dataset, $packedFieldname, $embeddedFieldnames /* if known */ = array ())
+	{
+		# End if no data
+		if (!$dataset) {return $dataset;}
+		
+		# Obtain the fieldnames, by checking the first record containing a non-empty JSON field
+		if (!$embeddedFieldnames) {
+			foreach ($dataset as $index => $record) {
+				if (strlen ($record[$packedFieldname])) {
+					$json = json_decode ($record[$packedFieldname], true);
+					$embeddedFieldnames = array_keys ($json);
+					break;		// No need to check further rows
+				}
+			}
+		}
+		
+		# If no embedded fieldnames list has been supplied/found, return the dataset as is, as there is no information on what fields to generate
+		if (!$embeddedFieldnames) {return $dataset;}
+		
+		# Regenerate each data row, replacing the JSON field with the expanded record data
+		$datasetUnpacked = array ();
+		foreach ($dataset as $index => $record) {
+			foreach ($record as $key => $value) {
+				if ($key == $packedFieldname) {
+					$json = (strlen ($value) ? json_decode ($value, true) : array ());		// JSON field may be empty
+					foreach ($embeddedFieldnames as $field) {	// Use fields registry to ensure consistent order
+						$datasetUnpacked[$index][$field] = (array_key_exists ($field, $json) ? $json[$field] : NULL);
+					}
+				} else {
+					$datasetUnpacked[$index][$key] = $value;
+				}
+			}
+		}
+		
+		# Return the modified data
+		return $datasetUnpacked;
 	}
 	
 	
