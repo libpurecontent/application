@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-22
- * Version 1.8.0
+ * Version 1.8.1
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -3963,9 +3963,20 @@ if (!function_exists ('str_contains')) {
 }
 
 
+# Polyfill for str_ends_with (natively available from PHP 8)
+if (!function_exists ('str_ends_with')) {
+	function str_ends_with ($haystack, $needle)
+	{
+		$needle_len = strlen($needle);
+		return ($needle_len === 0 || 0 === substr_compare ($haystack, $needle, - $needle_len));
+	}
+}
+
+
 # Polyfill for str_starts_with (natively available from PHP 8)
 if (!function_exists ('str_starts_with')) {
-	function str_starts_with ($haystack, $needle) {
+	function str_starts_with ($haystack, $needle)
+	{
 		return (strpos ($haystack, $needle ) === 0);
 	}
 }
