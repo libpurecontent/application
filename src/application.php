@@ -1,8 +1,8 @@
 <?php
 
 /*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-22
- * Version 1.8.2
+ * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-23
+ * Version 1.8.3
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -114,6 +114,7 @@ class application
 				$redirectMessage = "\n" . '<p><a href="%s">Click here to continue to the next page.</a></p>';
 			}
 			#!# If using 'refresh' this will be invalid
+			#!# Invalid if contains e.g. %C - this needs to rethought
 			$redirectMessage = sprintf ($redirectMessage, $url);
 		}
 		
@@ -600,8 +601,15 @@ class application
 		';
 		
 		# Do the comparison
-		$natsortFieldFunction = create_function ('$a,$b', $functionCode);
-		uasort ($array, $natsortFieldFunction);
+//		$natsortFieldFunction = create_function ('$a,$b', $functionCode);
+//		uasort ($array, $natsortFieldFunction);
+		uasort ($array, function ($a, $b) {
+global $fieldname;
+			$original = array ($a[$fieldname], $b[$fieldname]);
+			$copy = $original;
+			natsort ($copy);
+			return ($copy === $original ? -1 : 1);
+		});
 		
 		# Return the sorted list
 		return $array;
@@ -693,6 +701,24 @@ class application
 		
 		# Return the filtered array
 		return $filteredArray;
+	}
+	
+	
+	# Function to obtain the unique entries from a field in a multi-dimensional array
+	public static function array_field_entries ($dataset, $field)
+	{
+		# Extract the values
+		$entries = array ();
+		foreach ($dataset as $record) {
+			$entries[] = $record[$field];
+		}
+		
+		# Unique and sort the values
+		$entries = array_unique ($entries);
+		sort ($entries);
+		
+		# Return the list
+		return $entries;
 	}
 	
 	
@@ -3530,14 +3556,14 @@ class application
 	{
 		# Special cases
 		$specialCases = array (
-			"\u{00e4}"	 => 'ae',    // umlaut ä => ae
-			"\u{00f6}"	 => 'oe',    // umlaut ö => oe
-			"\u{00fc}"	 => 'ue',    // umlaut ü => ue
-			"\u{00c4}"	 => 'AE',    // umlaut Ä => AE
-			"\u{00d6}"	 => 'OE',    // umlaut Ö => OE
-			"\u{00dc}"	 => 'UE',    // umlaut Ü => UE
-			"\u{00f1}"	 => 'ny',    // ñ => ny
-			"\u{00ff}"	 => 'yu',    // ÿ => yu
+			"\u{00e4}"	 => 'ae',    // umlaut ï¿½ => ae
+			"\u{00f6}"	 => 'oe',    // umlaut ï¿½ => oe
+			"\u{00fc}"	 => 'ue',    // umlaut ï¿½ => ue
+			"\u{00c4}"	 => 'AE',    // umlaut ï¿½ => AE
+			"\u{00d6}"	 => 'OE',    // umlaut ï¿½ => OE
+			"\u{00dc}"	 => 'UE',    // umlaut ï¿½ => UE
+			"\u{00f1}"	 => 'ny',    // ï¿½ => ny
+			"\u{00ff}"	 => 'yu',    // ï¿½ => yu
 		);
 		$string = str_replace (array_keys ($specialCases), array_values ($specialCases), $string);
 		
@@ -3600,7 +3626,7 @@ class application
 	
 	
 	# Function to convert an HTML extract to a PDF; uses http://wkhtmltopdf.org/
-	public static function html2pdf ($html, $filename /* Either a filename used for temp download, or a trusted full path where the file will be saved; NB filename will be picked up by the browser if doing a save from an embedded PDF viewer */)
+	public static function html2pdf ($html, $filename /* Either a filename used for temp download, or a trusted full path where the file will be saved; NB filename will be picked up by the browser if doing a save from an embedded PDF viewer */, $pageMargin = true)
 	{
 		# Create the HTML as a tempfile
 		$inputFile = tempnam (sys_get_temp_dir (), 'tmp') . '.html';	// wkhtmltopdf requires a .html extension for the input file
@@ -3617,8 +3643,11 @@ class application
 			$outputFile = tempnam (sys_get_temp_dir (), 'tmp');		// Define a tempfile location for the created PDF
 		}
 		
+		# Determine page margin options; see: https://stackoverflow.com/questions/6057781/wkhtmltopdf-with-full-page-background
+		$pageMarginOptions = (!$pageMargin ? '--margin-top 0 --margin-bottom 0 --margin-left 0 --margin-right 0' : '');
+		
 		# Convert to PDF; see options at https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
-		$command = "wkhtmltopdf --enable-local-file-access --encoding 'utf-8' --print-media-type {$inputFile} {$outputFile}";
+		$command = "wkhtmltopdf --enable-local-file-access --encoding 'utf-8' {$pageMarginOptions} --print-media-type {$inputFile} {$outputFile}";
 		exec ($command, $output, $returnValue);
 		$result = (!$returnValue);
 		
