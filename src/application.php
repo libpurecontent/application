@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-23
- * Version 1.8.3
+ * Version 1.8.4
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -2752,7 +2752,7 @@ global $fieldname;
 	{
 		# Start the GeoJSON
 		$geojson = array (
-			'type'		=> 'GeometryCollection',
+			'type'		=> 'FeatureCollection',
 			'features'	=> array (),
 		);
 		
