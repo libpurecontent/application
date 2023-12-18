@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-23
- * Version 1.8.5
+ * Version 1.8.6
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -593,18 +593,7 @@ class application
 	public static function natsortField ($array, $fieldname)
 	{
 		# Create a function which creates an array of the two values, then compares the original array with a natsorted copy
-		$functionCode = '
-			$original = array ($a[\'' . $fieldname . '\'], $b[\'' . $fieldname . '\']);
-			$copy = $original;
-			natsort ($copy);
-			return ($copy === $original ? -1 : 1);
-		';
-		
-		# Do the comparison
-//		$natsortFieldFunction = create_function ('$a,$b', $functionCode);
-//		uasort ($array, $natsortFieldFunction);
-		uasort ($array, function ($a, $b) {
-global $fieldname;
+		uasort ($array, function ($a, $b) use ($fieldname) {
 			$original = array ($a[$fieldname], $b[$fieldname]);
 			$copy = $original;
 			natsort ($copy);
@@ -747,8 +736,9 @@ global $fieldname;
 	# Function to return the duplicate values in an array
 	public static function array_duplicate_values ($array)
 	{
-		$checkKeysUniqueComparison = create_function ('$value', 'if ($value > 1) return true;');
-		$result = array_keys (array_filter (array_count_values ($array), $checkKeysUniqueComparison));
+		$result = array_keys (array_filter (array_count_values ($array), function ($value) {
+			if ($value > 1) {return true;}
+		}));
 		return $result;
 	}
 	
