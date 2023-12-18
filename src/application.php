@@ -2,7 +2,7 @@
 
 /*
  * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-23
- * Version 1.8.4
+ * Version 1.8.5
  * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
  * Requires PHP 5.3+ with register_globals set to 'off'
  * Download latest from: https://download.geog.cam.ac.uk/projects/application/
@@ -1196,7 +1196,7 @@ global $fieldname;
 	
 	
 	# Wrapper for mail to make it UTF8 Unicode - see http://www.php.net/mail#92976 ; note that the From/To/Subject headers are only encoded to UTF-8 when they include non-ASCII characters (so that filtering is more likely to work)
-	public static function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = NULL, $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */, $attachments = array () /* array of filenames */, $forcePlainTextOnly = false)
+	public static function utf8Mail ($to, $subject, $message, $extraHeaders = false, $additionalParameters = '', $includeMimeContentTypeHeaders = true /* Set to true, the type, or false */, $attachments = array () /* array of filenames */, $forcePlainTextOnly = false)
 	{
 		# Add attachments if required, rewriting the message
 		if ($attachments) {
@@ -3556,14 +3556,14 @@ global $fieldname;
 	{
 		# Special cases
 		$specialCases = array (
-			"\u{00e4}"	 => 'ae',    // umlaut � => ae
-			"\u{00f6}"	 => 'oe',    // umlaut � => oe
-			"\u{00fc}"	 => 'ue',    // umlaut � => ue
-			"\u{00c4}"	 => 'AE',    // umlaut � => AE
-			"\u{00d6}"	 => 'OE',    // umlaut � => OE
-			"\u{00dc}"	 => 'UE',    // umlaut � => UE
-			"\u{00f1}"	 => 'ny',    // � => ny
-			"\u{00ff}"	 => 'yu',    // � => yu
+			"\u{00e4}"	 => 'ae',    // umlaut ä => ae
+			"\u{00f6}"	 => 'oe',    // umlaut ö => oe
+			"\u{00fc}"	 => 'ue',    // umlaut ü => ue
+			"\u{00c4}"	 => 'AE',    // umlaut Ä => AE
+			"\u{00d6}"	 => 'OE',    // umlaut Ö => OE
+			"\u{00dc}"	 => 'UE',    // umlaut Ü => UE
+			"\u{00f1}"	 => 'ny',    // ñ => ny
+			"\u{00ff}"	 => 'yu',    // ÿ => yu
 		);
 		$string = str_replace (array_keys ($specialCases), array_values ($specialCases), $string);
 		
