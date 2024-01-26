@@ -1,10 +1,5 @@
 <?php
 
-# Ensure the pureContent framework is loaded and clean server globals
-#!# This should be moved upstream to calling applications so that application.php does not instantiate code itself
-pureContent::cleanServerGlobals ();
-
-
 # Class containing general application support static methods
 class application
 {

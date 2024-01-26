@@ -10,7 +10,6 @@
         }
     ],
     "require": {
-        "libpurecontent/purecontent": "^1.13.1",
         "libpurecontent/database": "^4.2",
         "pear/mail": "^2.0"
     },
