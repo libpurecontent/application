@@ -1,14 +1,5 @@
 <?php
 
-/*
- * Coding copyright Martin Lucas-Smith, University of Cambridge, 2003-23
- * Version 1.8.6
- * Distributed under the terms of the GNU Public Licence - https://www.gnu.org/licenses/gpl-3.0.html
- * Requires PHP 5.3+ with register_globals set to 'off'
- * Download latest from: https://download.geog.cam.ac.uk/projects/application/
- */
-
-
 # Ensure the pureContent framework is loaded and clean server globals
 #!# This should be moved upstream to calling applications so that application.php does not instantiate code itself
 pureContent::cleanServerGlobals ();
