@@ -10,7 +10,8 @@
 
 
 # Ensure the pureContent framework is loaded and clean server globals
-require_once ('pureContent.php');
+#!# This should be moved upstream to calling applications so that application.php does not instantiate code itself
+pureContent::cleanServerGlobals ();
 
 
 # Class containing general application support static methods
@@ -1286,7 +1287,6 @@ class application
 			}
 			
 			# Create the mail object using the Mail::factory method 
-			require_once ('Mail.php');
 			$mailObject = Mail::factory ('smtp', $smtpAuthCredentials);
 			
 			# Send the mail
@@ -3717,7 +3717,6 @@ class application
 			$databaseConnection->execute ($sql);
 			
 			# Load the cache
-			require_once ('database.php');
 			$cache = $databaseConnection->select ($database, 'spellcheckcache');
 			$originalCacheSize = count ($cache);
 		}
