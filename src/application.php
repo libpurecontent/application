@@ -3562,6 +3562,8 @@ class application
 		switch (true) {
 			case preg_match ('/(.+)y$/', $singularWord, $matches):
 				return $matches[1] . 'ies';
+			case preg_match ('/(.+)is$/', $singularWord, $matches):		// E.g. thesis -> theses
+				return $matches[1] . "es";
 			case preg_match ('/(.+)s$/', $singularWord, $matches):
 				return $matches[1] . "s'";
 			default:
@@ -3754,6 +3756,7 @@ class application
 		if ($databaseConnection) {
 			
 			# Initialise a cache table; this can be persistent across imports
+			#!# utf8 is outdated charset
 			$sql = "
 				CREATE TABLE IF NOT EXISTS spellcheckcache (
 				`id` VARCHAR(255) COLLATE utf8_bin NOT NULL COMMENT 'Word',		/* utf8_bin needed to ensure case-sensitivity in a unique column */
