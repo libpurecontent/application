@@ -3949,7 +3949,6 @@ class application
 	
 	
 	# Function to create a jumplist form
-	#!# Needs support for nested lists
 	public static function htmlJumplist ($values /* will have htmlspecialchars applied to both keys and values */, $selected = '', $action = '', $name = 'jumplist', $parentTabLevel = 0, $class = 'jumplist', $introductoryText = 'Go to:', $valueSubstitution = false, $onchangeJavascript = true)
 	{
 		# Return an empty string if no items
@@ -3959,8 +3958,16 @@ class application
 		$tabs = str_repeat ("\t", ($parentTabLevel));
 		
 		# Build the list; note that the visible value can never have tags within (e.g. <span>): https://stackoverflow.com/questions/5678760
-		foreach ($values as $value => $visible) {
-			$fragments[] = '<option value="' . ($valueSubstitution ? str_replace ('%value', htmlspecialchars ($value), $valueSubstitution) : htmlspecialchars ($value)) . '"' . ($value == $selected ? ' selected="selected"' : '') . '>' . htmlspecialchars ($visible) . '</option>';
+		foreach ($values as $key => $value) {
+			if (is_array ($value)) {	// Nested optgroup
+				$fragments[] = '<optgroup label="' . htmlspecialchars ($key) . ':">';
+				foreach ($value as $subKey => $subValue) {
+					$fragments[] = "\t" . '<option value="' . ($valueSubstitution ? str_replace ('%value', htmlspecialchars ($subKey), $valueSubstitution) : htmlspecialchars ($subKey)) . '"' . ($subKey == $selected ? ' selected="selected"' : '') . '>' . htmlspecialchars ($subValue) . '</option>';
+				}
+				$fragments[] = '</optgroup>';
+			} else {	// Standard value
+				$fragments[] = '<option value="' . ($valueSubstitution ? str_replace ('%value', htmlspecialchars ($key), $valueSubstitution) : htmlspecialchars ($key)) . '"' . ($key == $selected ? ' selected="selected"' : '') . '>' . htmlspecialchars ($value) . '</option>';
+			}
 		}
 		
 		# Construct the HTML
