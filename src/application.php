@@ -1928,6 +1928,9 @@ class application
 		# Check whether the array is associative
 		if (self::isAssociativeArray ($array)) {
 			
+			# Take no action if not present
+			if (!isSet ($array[$newFirstName])) {return $array;}
+			
 			# Extract the first item
 			$firstItem[$newFirstName] = $array[$newFirstName];
 			
