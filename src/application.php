@@ -170,6 +170,7 @@ class application
 		switch ($statusCode) {
 			
 			case 'refresh':
+				self::cleanServerGlobals ();
 				$url = $_SERVER['_PAGE_URL'];
 				// Fall through to 301
 				
@@ -247,6 +248,7 @@ class application
 		setcookie ("flashredirect_{$name}", $value, time () + (60*5), $path);
 		
 		# Redirect to the specified location
+		self::cleanServerGlobals ();
 		$html = self::sendHeader (302, $_SERVER['_SITE_URL'] . $redirectToPath, $redirectMessage);
 		
 		# Return the HTML which will be displayed as the fallback
@@ -1104,6 +1106,7 @@ class application
 		# Convert the string; not sure why this works but see www.php.net/function.iconv#59030
 		if ($iconvIgnore) {$outputCharset .= '//IGNORE';}
 		if (!$string = iconv ($inputCharset, $outputCharset, $string)) {
+			self::cleanServerGlobals ();
 			error_log ('PHP Iconv failed: ' . $outputCharset . ' on URL: ' . $_SERVER['_PAGE_URL'] . ' for string: ' . $string);
 		}
 		
@@ -1631,6 +1634,7 @@ class application
 	public static function urlIsInternal ($url)
 	{
 		# Return true if the full URL starts with the site URL
+		self::cleanServerGlobals ();
 		return preg_match ('/^' . addcslashes ($_SERVER['_SITE_URL'], '/') . '/i', $url);
 	}
 	
@@ -3986,6 +3990,7 @@ class application
 		
 		# If posted, jump, adding the current site's URL if the target doesn't start with http(s)://
 		if (isSet ($_POST[$name])) {
+			self::cleanServerGlobals ();
 			$location = (preg_match ('~(http|https)://~i', $_POST[$name]) ? '' : $_SERVER['_SITE_URL']) . $_POST[$name];
 			$html = self::sendHeader (302, $location, $redirectMessage = true);
 		}
