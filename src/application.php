@@ -2451,11 +2451,11 @@ class application
 	}
 	
 	
-	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions, with the extension checked case insensitively; both the checked filename and the allowed/disallowed extensions must start with a .
-	public static function filenameIsValid ($name, $disallowedExtensions = array (), $allowedExtensions = array ())
+	# Generalised support function to check whether a filename is valid given a list of disallowed and allowed extensions, with the extension checked case insensitively; the allowed/disallowed extensions must start with a . unless this is disabled
+	public static function filenameIsValid ($name, $disallowedExtensions = array (), $allowedExtensions = array (), $extensionsListsHaveDot = true)
 	{
 		# Determine the extension of the file
-		$extension = '.' . pathinfo ($name, PATHINFO_EXTENSION);
+		$extension = ($extensionsListsHaveDot ? '.' : '') . pathinfo ($name, PATHINFO_EXTENSION);
 		
 		# Check for a disallowed extension
 		if ($disallowedExtensions) {
