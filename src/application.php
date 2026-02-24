@@ -2208,15 +2208,15 @@ class application
 		preg_match ('/^(\d+)([bkm]*)$/iD', $string, $parts);
 		
 		# Convert the size to a double and the unit to lower-case
-		$size = (double) $parts[1];
+		$size = (float) $parts[1];
 		$unit = strtolower ($parts[2]);
 		
 		# Convert the number based on the unit
 		switch ($unit) {
 			case 'm':
-				return ($size * (double) 1048576);
+				return ($size * (float) 1048576);
 			case 'k':
-				return ($size * (double) 1024);
+				return ($size * (float) 1024);
 			case 'b':
 			default:
 				return $size;
