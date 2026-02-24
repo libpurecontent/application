@@ -4053,32 +4053,32 @@ class application
 
 
 
-# Define an emulated mime_content_type function (if not using Windows) - taken from http://cvs.php.net/viewvc.cgi/pear/PHP_Compat/Compat/Function/mime_content_type.php?revision=1.6&view=markup
+# Define an emulated mime_content_type function (if not using Windows) - taken from https://github.com/pear/PHP_Compat/blob/master/PHP/Compat/Function/mime_content_type.php
 if (!function_exists ('mime_content_type') && (!strstr (PHP_OS, 'WIN')))
 {
 	function mime_content_type ($filename)
 	{
-	// Sanity check
+		// Sanity check
 	    if (!file_exists($filename)) {
 	        return false;
 	    }
-	
-	    $filename = escapeshellarg($filename);
-	    $out = `file -iL $filename 2>/dev/null`;
-	    if (empty($out)) {
+		
+	    $filename = escapeshellarg ($filename);
+	    $out = shell_exec ("file -iL {$filename} 2>/dev/null");
+	    if (empty ($out)) {
 	        return 'application/octet-stream';
 	    }
-	
+		
 	    // Strip off filename
-	    $t = substr($out, strpos($out, ':') + 2);
-	
-	    if (strpos($t, ';') !== false) {
+	    $t = substr ($out, strpos($out, ':') + 2);
+		
+	    if (strpos ($t, ';') !== false) {
 	        // Strip MIME parameters
-	        $t = substr($t, 0, strpos($t, ';'));
+	        $t = substr ($t, 0, strpos($t, ';'));
 	    }
-	
+		
 	    // Strip any remaining whitespace
-	    return trim($t);
+	    return trim ($t);
 	}
 }
 
