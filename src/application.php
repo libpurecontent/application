@@ -1709,13 +1709,14 @@ class application
 		
 		# Assemble the data cells
 		$dataHtml = '';
+		$dataHtml .= "\n\t" . '<tbody>';
 		foreach ($array as $key => $value) {
 			if (!$value || !is_array ($value)) {return $html = "\n" . '<p class="warning">Error: the supplied data was not a multi-dimensional array.</p>';}
 			$headings = $value;
-			$dataHtml .= "\n\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';
+			$dataHtml .= "\n\t\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';
 			if ($keyAsFirstColumn) {
 				$thisCellClass = ($addCellClasses ? htmlspecialchars ($key) . ((is_array ($addCellClasses) && isSet ($addCellClasses[$key])) ? ' ' . $addCellClasses[$key] : '') : '') . ($keyAsFirstColumn ? ($addCellClasses ? ' ' : '') . 'key' : '');
-				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . "<strong>{$key}</strong></td>";
+				$dataHtml .= ($compress ? '' : "\n\t\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . "<strong>{$key}</strong></td>";
 			}
 			$i = 0;
 			foreach ($value as $valueKey => $valueData) {
@@ -1725,23 +1726,26 @@ class application
 				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) . ((is_array ($addCellClasses) && isSet ($addCellClasses[$valueKey])) ? ' ' . $addCellClasses[$valueKey] : '') : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$htmlAllowed = (is_array ($allowHtml) ? (in_array ($valueKey, $allowHtml)) : $allowHtml);	// Either true/false or an array of permitted fields where HTML is allowed
 				$cellContents = ($htmlAllowed ? $data : htmlspecialchars ($data));
-				$dataHtml .= ($compress ? '' : "\n\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? self::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
+				$dataHtml .= ($compress ? '' : "\n\t\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? self::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
 		}
+		$dataHtml .= "\n\t" . '</tbody>';
 		
 		# Construct the heading HTML
 		$headingHtml  = '';
 		if ($tableHeadingSubstitutions !== false) {
-			$headingHtml .= "\n\t" . '<tr>';
-			if ($keyAsFirstColumn) {$headingHtml .= "\n\t\t" . '<th></th>';}
+			$headingHtml .= "\n\t" . '<thead>';
+			$headingHtml .= "\n\t\t" . '<tr>';
+			if ($keyAsFirstColumn) {$headingHtml .= "\n\t\t\t" . '<th></th>';}
 			$columns = array_keys ($headings);
 			foreach ($columns as $column) {
 				if ($onlyFields && !in_array ($column, $onlyFields)) {continue;}	// Skip if not in the list of onlyFields if that is supplied
 				$columnTitle = (empty ($tableHeadingSubstitutions) ? $column : (isSet ($tableHeadingSubstitutions[$column]) ? $tableHeadingSubstitutions[$column] : $column));
-				$headingHtml .= "\n\t\t" . ($addCellClasses ? '<th class="' . $column . ((is_array ($addCellClasses) && isSet ($addCellClasses[$column])) ? ' ' . $addCellClasses[$column] : '') . '">' : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
+				$headingHtml .= "\n\t\t\t" . ($addCellClasses ? '<th class="' . $column . ((is_array ($addCellClasses) && isSet ($addCellClasses[$column])) ? ' ' . $addCellClasses[$column] : '') . '">' : '<th>') . ($uppercaseHeadings ? ucfirst ($columnTitle) : $columnTitle) . '</th>';
 			}
-			$headingHtml .= "\n\t" . '</tr>';
+			$headingHtml .= "\n\t\t" . '</tr>';
+			$headingHtml .= "\n\t" . '</thead>';
 		}
 		
 		# Construct the overall heading
@@ -1793,7 +1797,7 @@ class application
 		}
 		
 		# Construct the table and add the data in
-		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"$class\">";
+		$html  = "\n\n<" . ($dlFormat ? 'dl' : 'table') . " class=\"{$class}\">";
 		foreach ($array as $key => $value) {
 			if (!$dlFormat) {$html .= "\n\t" . '<tr' . ($addRowKeyClasses ? ' class="' . htmlspecialchars ($key) . '"' : '') . '>';}
 			$label = ($keySubstitutions && is_array ($keySubstitutions) && array_key_exists ($key, $keySubstitutions) ? $keySubstitutions[$key] : $key);
