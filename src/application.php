@@ -251,6 +251,7 @@ class application
 	{
 		# Ensure the cache directory is writable
 		if (!$cacheDirectory) {$cacheDirectory = sys_get_temp_dir ();}
+		if (!substr ($cacheDirectory, -1) != '/') {$cacheDirectory .= '/';}
 		if (!is_dir ($cacheDirectory) || !is_writable ($cacheDirectory)) {
 			$cacheSeconds = false;
 			error_log ("The cache directory {$cacheDirectory} does not exist or is not writeable");
