@@ -246,6 +246,47 @@ class application
 	}
 	
 	
+	# Function to retrieve a file with file cache
+	public static function file_get_contents_cacheable ($url, $cacheSeconds /* or 0 to disable */, $cacheDirectory = false /* will use system tmpdir if false */, $httpTimeoutSeconds = 60)
+	{
+		# Ensure the cache directory is writable
+		if (!$cacheDirectory) {$cacheDirectory = sys_get_temp_dir ();}
+		if (!is_dir ($cacheDirectory) || !is_writable ($cacheDirectory)) {
+			$cacheSeconds = false;
+			error_log ("The cache directory {$cacheDirectory} does not exist or is not writeable");
+		}
+		
+		# Determine cache file location
+		$cacheFile = $cacheDirectory . md5 ($url);
+		
+		# Determine whether to regenerate a cache file
+		$regenerateCache = false;
+		if ($cacheSeconds) {
+			if (file_exists ($cacheFile)) {
+				if (time () - filemtime ($cacheFile) < $cacheSeconds) {
+					$url = $cacheFile;		// Cache hit, saving URL retrieval
+				} else {
+					$regenerateCache = true;
+				}
+			} else {
+				$regenerateCache = true;
+			}
+		}
+		
+		# Get the data
+		$context = stream_context_create (array ('http' => array ('timeout' => $httpTimeoutSeconds)));
+		$data = file_get_contents ($url, false, $context);
+		
+		# Regenerate the cache if needed
+		if ($regenerateCache) {
+			file_put_contents ($cacheFile, $data);
+		}
+		
+		# Return the data, loaded from cache if required
+		return $data;
+	}
+	
+	
 	# Function to set a flash message
 	#!# Currently also does a redirect, which is probably best separated out, or the function renamed to setFlashRedirect
 	public static function setFlashMessage ($name, $value, $redirectToPath, $redirectMessage = false, $path = '/')
