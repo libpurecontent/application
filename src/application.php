@@ -322,7 +322,7 @@ class application
 	
 	
 	# Generalised support function to allow quick dumping of form data to screen, for debugging purposes
-	public static function dumpData ($data, $hide = false, $return = false, $htmlspecialchars = true)
+	public static function dumpData ($data, $return = true, $hide = false, $htmlspecialchars = true)
 	{
 		# End if debugging is supressed via a constant which is set to true
 		if (defined ('SUPPRESS_DEBUG') && (SUPPRESS_DEBUG)) {return false;}
