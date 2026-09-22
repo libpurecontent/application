@@ -337,7 +337,6 @@ class application
 			$data = print_r ($data, true);
 		}
 		if ($htmlspecialchars) {
-			if (!defined ('ENT_SUBSTITUTE')) {define ('ENT_SUBSTITUTE', 8);}	// See http://hakre.wordpress.com/2011/08/31/substitutes-for-php-5-4s-htmlspecialchars/ and http://www.php.net/htmlspecialchars#106188
 			$data = htmlspecialchars ($data, ENT_QUOTES | ENT_SUBSTITUTE);
 		}
 		$html .= $data;
