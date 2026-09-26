@@ -1766,7 +1766,7 @@ class application
 				$data = $array[$key][$valueKey];
 				$thisCellClass = ($addCellClasses ? htmlspecialchars ($valueKey) . ((is_array ($addCellClasses) && isSet ($addCellClasses[$valueKey])) ? ' ' . $addCellClasses[$valueKey] : '') : '') . ((($i == 1) && !$keyAsFirstColumn) ? ($addCellClasses ? ' ' : '') . 'key' : '');
 				$htmlAllowed = (is_array ($allowHtml) ? (in_array ($valueKey, $allowHtml)) : $allowHtml);	// Either true/false or an array of permitted fields where HTML is allowed
-				$cellContents = ($htmlAllowed ? $data : htmlspecialchars ($data));
+				$cellContents = ($htmlAllowed ? $data : htmlspecialchars ((!is_null ($data) ? $data : '')));
 				$dataHtml .= ($compress ? '' : "\n\t\t\t") . (strlen ($thisCellClass) ? "<td class=\"{$thisCellClass}\">" : '<td>') . ($encodeEmailAddress ? self::encodeEmailAddress ($cellContents) : $cellContents) . (($showColons && ($i == 1) && $data) ? ':' : '') . '</td>';
 			}
 			$dataHtml .= ($compress ? '' : "\n\t") . '</tr>';
