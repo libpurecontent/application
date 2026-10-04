@@ -1604,6 +1604,9 @@ class application
 	# Function to encode an e-mail address
 	public static function encodeEmailAddress ($email)
 	{
+		# Do attempt perform string replacement if NULL
+		if (is_null ($email)) {return $email;}
+		
 		# Return the string
 		return str_replace ('@', '<span>&#64;</span>', $email);
 	}
