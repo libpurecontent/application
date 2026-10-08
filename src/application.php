@@ -3617,12 +3617,15 @@ class application
 	
 	
 	# Function to pluralise a signular word; currently only basic support
+	# A fuller implementation can be found at e.g.: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/String/Inflector/EnglishInflector.php
 	public static function pluralise ($singularWord)
 	{
 		# Pluralise
 		switch (true) {
-			case preg_match ('/(.+)y$/', $singularWord, $matches):
+			case preg_match ('/(.+)y$/', $singularWord, $matches):		// E.g. country -> countries
 				return $matches[1] . 'ies';
+			case preg_match ('/(.+)ss$/', $singularWord, $matches):		// E.g. business -> businesses
+				return $matches[1] . "sses";
 			case preg_match ('/(.+)is$/', $singularWord, $matches):		// E.g. thesis -> theses
 				return $matches[1] . "es";
 			case preg_match ('/(.+)s$/', $singularWord, $matches):
@@ -3640,6 +3643,8 @@ class application
 		switch (true) {
 			case preg_match ('/(.+)ies$/', $pluralWord, $matches):
 				return $matches[1] . 'y';
+			case preg_match ('/(.+)sses$/', $pluralWord, $matches):
+				return $matches[1] . 'ss';
 			case preg_match ('/(.+)s\'$/', $pluralWord, $matches):
 				return $matches[1] . 's';
 			case preg_match ('/(.+)s$/', $pluralWord, $matches):
