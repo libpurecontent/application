@@ -2950,7 +2950,7 @@ class application
 		
 		# If required, order the values so that longer (string-length) values come first, making it safe for multiple replacements
 		if ($longerFirst) {
-			usort ($list, array ('self', 'lengthDescValueSort'));
+			usort ($list, array (self::class, 'lengthDescValueSort'));
 		}
 		
 		# Reindex to ensure starting from 0, following line stripping and possible longer-first operations
