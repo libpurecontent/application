@@ -539,6 +539,9 @@ class application
 	# Trucation algorithm; this is multibyte safe and uses mb_
 	public static function str_truncate ($string, $characters, $moreUrl, $override = '<!--more-->', $respectWordBoundaries = true, $htmlMode = true)
 	{
+		# Do nothing if NULL
+		if (is_null ($string)) {return $string;}
+		
 		# End false if $characters is non-numeric or zero
 		if (!$characters || !is_numeric ($characters)) {return false;}
 		
