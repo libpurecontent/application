@@ -3092,10 +3092,11 @@ class application
 		$list = array ();
 		foreach ($data as $item) {
 			$itemTrimmed = trim ($item ?? '');
+			$itemTrimmed = trim ($itemTrimmed, $separator);
 			$tokens = explode ($separator, $itemTrimmed);	// Will ensure that a value of 'foo' (rather than '|foo|') still enters the result list
 			foreach ($tokens as $token) {
 				$token = trim ($token);
-				if ($token == $separator || !strlen ($token)) {continue;}
+				if (!strlen ($token)) {continue;}
 				if ($lookupMode) {
 					$list[$item][] = $token;	// This will automatically avoid duplicates because of the keying
 				} else {
