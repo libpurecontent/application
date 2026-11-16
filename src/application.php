@@ -3093,7 +3093,8 @@ class application
 		foreach ($data as $item) {
 			$itemTrimmed = trim ($item ?? '');
 			$itemTrimmed = trim ($itemTrimmed, $separator);
-			$tokens = explode ($separator, $itemTrimmed);	// Will ensure that a value of 'foo' (rather than '|foo|') still enters the result list
+			$tokens = (strlen ($itemTrimmed) ? explode ($separator, $itemTrimmed) : array ());	// Will ensure that a value of 'foo' (rather than '|foo|') still enters the result list
+			#!# In $lookupMode, policy decision needed for whether, if the item is empty, $list[$item] should be initialised and be included as an empty array; at present it is not registered
 			foreach ($tokens as $token) {
 				$token = trim ($token);
 				if (!strlen ($token)) {continue;}
