@@ -3091,7 +3091,8 @@ class application
 		# Extract each item
 		$list = array ();
 		foreach ($data as $item) {
-			$tokens = explode ($separator, trim ($item));	// Will ensure that a value of 'foo' (rather than '|foo|') still enters the result list
+			$itemTrimmed = trim ($item ?? '');
+			$tokens = explode ($separator, $itemTrimmed);	// Will ensure that a value of 'foo' (rather than '|foo|') still enters the result list
 			foreach ($tokens as $token) {
 				$token = trim ($token);
 				if ($token == $separator || !strlen ($token)) {continue;}
